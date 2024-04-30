@@ -1,11 +1,17 @@
 from lorentz_63 import *
-
+from lss_forward import *
+import numpy as np;
 dt = 0.02;
-T = 100;
+T = 10;
 m_steps = round(T/dt);
 lorentz_solver = Lorentz_63(dt, m_steps);
 u = lorentz_solver.compute_trajectory();
-lorentz_solver.plot_components(u);
-lorentz_solver.plot_3d_curve(u);
+#lorentz_solver.plot_components(u);
+#lorentz_solver.plot_3d_curve(u);
+
+lss_forward =  LSSforward(lorentz_solver);
+[v,eta] = lss_forward.compute_shadowing_direction(u);
+#np.set_printoptions(threshold=np.inf)
+print(v);
 
 

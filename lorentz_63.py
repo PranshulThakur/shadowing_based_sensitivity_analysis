@@ -18,7 +18,7 @@ class Lorentz_63:
         return f_val;
 
     def f_u(self,u):
-        jac = np.zeros(len(u),len(u));
+        jac = np.zeros((len(u),len(u)));
         jac[0][0] = -self.sigma;
         jac[0][1] = self.sigma;
         jac[0][2] = 0.0;
