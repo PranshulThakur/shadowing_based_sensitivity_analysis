@@ -13,7 +13,7 @@ class Lorentz_63:
     def f(self,t,m,u):
         f_val = np.zeros(len(u));
         f_val[0] = self.sigma*(u[1]-u[0]);
-        f_val[1] = u[0]*(self.sigma - (u[2]-self.z0)) - u[1];
+        f_val[1] = u[0]*(self.rho - (u[2]-self.z0)) - u[1];
         f_val[2] = u[0]*u[1] - self.beta*(u[2] - self.z0);
         return f_val;
 
@@ -42,21 +42,20 @@ class Lorentz_63:
     
     def compute_trajectory(self):
         u0 = np.ones(3);
-        #u0[0] = 8.0;
+        u0[0] = 8.0;
 
         # Integrate to get u on the attractor.
         T = 50.0;
         n_pre_steps = round(T/self.dt); 
         for i in range(n_pre_steps):
-            ti = i*self.dt;
+            ti = i*self.dt + self.dt/2.0;
             u0 = rk4vec(ti,3,u0,self.dt,self.f);
 
-        # Integrate and store the trajectory
-        
+        # Integrate and store the trajectory 
         u = np.zeros((self.m_steps,3)); # u[i] stores u_{i+1/2}
         u[0,:] = u0;
         for i in range(self.m_steps-1):
-            ti = (i+1)*self.dt;
+            ti = i*self.dt + self.dt/2.0;
             u[i+1] = rk4vec(ti,3,u[i],self.dt,self.f);
         
         return u;
