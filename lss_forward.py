@@ -7,7 +7,7 @@ class LSSforward:
     def __init__(self, solver):
         self.solver = solver;
         #self.functional = functional;
-        self.alpha_squared = 10.0**2;
+        self.alpha_squared = 10.0**16;
 
     def compute_shadowing_direction(self,u):
         m = self.solver.m_steps;
@@ -73,8 +73,36 @@ class LSSforward:
         eta_dilations = -1.0/self.alpha_squared * (CT @ w);
         v = -1.0 * (BT @ w);
 
-        return [v,eta_dilations];
+        v_array = np.zeros((m,nstate));
+        for i in range(m):
+            v_array[i] = v[i*nstate:(i+1)*nstate];
 
+        return [v_array,eta_dilations];
+
+    def plot_shadowing_direction(self, v, eta): 
+        m = self.solver.m_steps;
+        dt = self.solver.dt;
+        v_exact = np.zeros(3);
+        v_exact[2]=1.0;
+        err_v = np.zeros(m);
+        time = np.zeros(m);
+        time_eta = np.zeros(m-1);
+        err_eta = np.log(np.fabs(eta));
+        for i in range(m):
+            err = v_exact - v[i];
+            err_v[i] = np.log(np.sqrt(np.dot(err,err)));
+            time[i] = i*dt + dt/2.0;
+            if i>0:
+                time_eta[i-1] = i*dt;
+
+        from matplotlib import pyplot as plt;
+
+        plt.plot(time, err_v, '*', label="ln(||v-v_exact||)");
+        plt.plot(time_eta, err_eta, 'o', label="ln(|n-n_exact|)");
+        plt.xlabel("Time");
+        plt.ylabel("error");
+        plt.legend();
+        plt.show();
 
             
 

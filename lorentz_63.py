@@ -19,17 +19,17 @@ class Lorentz_63:
 
     def f_u(self,u):
         jac = np.zeros((len(u),len(u)));
-        jac[0][0] = -self.sigma;
-        jac[0][1] = self.sigma;
-        jac[0][2] = 0.0;
+        jac[0,0] = -self.sigma;
+        jac[0,1] = self.sigma;
+        jac[0,2] = 0.0;
 
-        jac[1][0] = self.rho - (u[2]-self.z0);
-        jac[1][1] = -1.0;
-        jac[1][2] = -u[0];
+        jac[1,0] = self.rho - (u[2]-self.z0);
+        jac[1,1] = -1.0;
+        jac[1,2] = -u[0];
 
-        jac[2][0] = u[1];
-        jac[2][1] = u[0];
-        jac[2][2] = -self.beta;
+        jac[2,0] = u[1];
+        jac[2,1] = u[0];
+        jac[2,2] = -self.beta;
         return jac;
 
     def f_z0(self,u): 
