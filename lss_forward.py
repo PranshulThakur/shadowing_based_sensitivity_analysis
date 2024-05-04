@@ -7,7 +7,7 @@ class LSSforward:
     def __init__(self, solver):
         self.solver = solver;
         #self.functional = functional;
-        self.alpha_squared = 100.0;
+        self.alpha_squared = 10.0**2;
 
     def compute_shadowing_direction(self,u):
         m = self.solver.m_steps;
@@ -33,7 +33,6 @@ class LSSforward:
 
         for i in range(1, m):
             Ei = I/dt + 0.5*self.solver.f_u(u[i-1]);
-            print(Ei);
             Gi = I*(-1.0/dt) + 0.5*self.solver.f_u(u[i]); 
             fi = np.zeros(nstate);
             fi = (u[i,:] - u[i-1,:])/dt;
@@ -52,12 +51,9 @@ class LSSforward:
                     B_rowindices[index_B] = rowindexB;
                     B_colindices[index_B] = colindexB;
                     if k<nstate:
-                        print(j);
-                        print(k);
-                        print(index_B);
-                        B_data[index_B] = Ei[j][k];
+                        B_data[index_B] = Ei[j,k];
                     else:
-                        B_data[index_B] = Gi[j][k-nstate];
+                        B_data[index_B] = Gi[j,(k-nstate)];
 
 
         B = scipy.sparse.csr_matrix((B_data, (B_rowindices,B_colindices)), shape=((m-1)*nstate,m*nstate));
