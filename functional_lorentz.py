@@ -37,4 +37,13 @@ class FunctionalLorentz:
         sensitivity_val /= self.m;
         return sensitivity_val;
 
+    def compute_adjoint_sensitivity(self, adjoint_array, u, solver):
+        sensitivity_val = 0.0;
+        for i in range(self.m):
+            fs = solver.f_z0(u[i]);
+            sensitivity_val += 0.5*(np.dot(adjoint_array[i],fs) + np.dot(adjoint_array[i+1],fs)) + self.j_s(u[i]);
+
+        sensitivity_val /= self.m;
+        return sensitivity_val;
+
 

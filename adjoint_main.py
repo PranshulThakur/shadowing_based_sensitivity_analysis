@@ -1,5 +1,5 @@
 from lorentz_63 import *
-from lss_forward import *
+from lss_adjoint import *
 from functional_lorentz import *
 import numpy as np;
 dt = 0.02;
@@ -10,7 +10,8 @@ sensitivity_vals = np.zeros(NT);
 sensitivity_errs = np.zeros(NT);
 sensitivity_convergence_ref1 = np.zeros(NT);
 sensitivity_convergence_ref2 = np.zeros(NT);
-C = 0.1;
+C1 = 0.04;
+C2 = 0.7;
 for i in range(NT):
     T = T_array[i];
     m_steps = round(T/dt);
@@ -19,20 +20,19 @@ for i in range(NT):
     #lorentz_solver.plot_components(u);
     #lorentz_solver.plot_3d_curve(u);
 
-    lss_forward =  LSSforward(lorentz_solver);
-    [v,eta] = lss_forward.compute_shadowing_direction(u);
-    #lss_forward.plot_shadowing_direction(v,eta);
     functional = FunctionalLorentz(m_steps);
-    sensitivity_vals[i] = functional.compute_forward_sensitivity(u,v,eta);
+    lss_adjoint =  LSSadjoint(lorentz_solver,functional);
+    adjoint_array = lss_adjoint.compute_adjoint_solution(u);
+    sensitivity_vals[i] = functional.compute_adjoint_sensitivity(adjoint_array,u,lorentz_solver);
     sensitivity_errs[i] = np.fabs(sensitivity_vals[i] - 1.0);
-    sensitivity_convergence_ref1[i] = C/np.sqrt(T);
-    sensitivity_convergence_ref2[i] = C/T;
+    sensitivity_convergence_ref1[i] = C1/np.sqrt(T);
+    sensitivity_convergence_ref2[i] = C2/T;
 
 from matplotlib import pyplot as plt;
 plt.loglog(T_array, sensitivity_errs,'*', label="Error in sensitivity");
 plt.loglog(T_array, sensitivity_convergence_ref1,'--', label="O(1/sqrt(T))");
 plt.loglog(T_array, sensitivity_convergence_ref2,'--', label="O(1/T)");
-plt.title("Error in sensitivity vs T");
+plt.title("Error in sensitivity vs T using homogeneous adjoint BC.");
 plt.xlabel("Integration length T");
 plt.ylabel("Error in sensitivity");
 plt.legend();
