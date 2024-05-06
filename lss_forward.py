@@ -6,8 +6,7 @@ class LSSforward:
     # Implements algorithm of Wang, Q., Hu, R., & Blonigan, P. (2014). Least squares shadowing sensitivity analysis of chaotic limit cycle oscillations. Journal of Computational Physics, 267, 210-224.
     def __init__(self, solver):
         self.solver = solver;
-        #self.functional = functional;
-        self.alpha_squared = 10.0**16;
+        self.alpha_squared = 10.0**2;
 
     def compute_shadowing_direction(self,u):
         m = self.solver.m_steps;
@@ -16,11 +15,6 @@ class LSSforward:
         I = scipy.sparse.identity(nstate);
         b = np.zeros((m-1)*nstate);
         
-        #length_sysindices = 3*nstate*nstate*(m-1) - 2*nstate*nstate;
-        #sysmatrix_rowindices = np.zeros(length_sysindices, dtype=int);
-        #sysmatrix_colindices = np.zeros(length_sysindices, dtype=int);
-        #sysmatrix_data = np.zeros(length_sysindices);
-
         length_Bindices = 2*nstate*nstate*(m-1);
         B_rowindices = np.zeros(length_Bindices, dtype=int);
         B_colindices = np.zeros(length_Bindices, dtype=int);

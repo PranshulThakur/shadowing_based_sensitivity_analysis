@@ -1,5 +1,6 @@
 from lorentz_63 import *
 from lss_forward import *
+from functional_lorentz import *
 import numpy as np;
 dt = 0.02;
 T = 100;
@@ -11,4 +12,6 @@ u = lorentz_solver.compute_trajectory();
 
 lss_forward =  LSSforward(lorentz_solver);
 [v,eta] = lss_forward.compute_shadowing_direction(u);
-lss_forward.plot_shadowing_direction(v,eta);
+#lss_forward.plot_shadowing_direction(v,eta);
+functional = FunctionalLorentz(m_steps);
+print(functional.compute_forward_sensitivity(u,v,eta));
