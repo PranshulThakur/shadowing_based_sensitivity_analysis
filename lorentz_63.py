@@ -88,7 +88,7 @@ class Lorentz_63:
         ax.set_xlabel("x");
         ax.set_ylabel("y");
         ax.set_zlabel("z");
-        ax.set_title ( 'Lorenz 3D Plot' );
+        ax.set_title ( 'Lorenz 63: trajectory of solution' );
         plt.show();
         return;
 

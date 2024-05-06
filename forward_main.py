@@ -4,8 +4,9 @@ from functional_lorentz import *
 import numpy as np;
 dt = 0.02;
 T_final = 100.0;
-NT = 100;
-T_array = np.linspace(1.0,T_final,NT);
+NT = 1;
+#T_array = np.linspace(1.0,T_final,NT);
+T_array = [T_final];
 sensitivity_vals = np.zeros(NT);
 sensitivity_errs = np.zeros(NT);
 sensitivity_convergence_ref1 = np.zeros(NT);
@@ -17,7 +18,7 @@ for i in range(NT):
     lorentz_solver = Lorentz_63(dt, m_steps);
     u = lorentz_solver.compute_trajectory();
     #lorentz_solver.plot_components(u);
-    #lorentz_solver.plot_3d_curve(u);
+    lorentz_solver.plot_3d_curve(u);
 
     lss_forward =  LSSforward(lorentz_solver);
     [v,eta] = lss_forward.compute_shadowing_direction(u);

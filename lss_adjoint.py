@@ -8,7 +8,7 @@ class LSSadjoint:
         self.functional = functional;
         self.alpha_squared = 10.0**2;
 
-    def compute_adjoint_solution(self,u):
+    def compute_adjoint_solution(self,u,adjoint_bc):
         m = self.solver.m_steps;
         dt = self.solver.dt;
         nstate = 3;
@@ -27,14 +27,24 @@ class LSSadjoint:
         javg = self.functional.compute_j_avg(u);
 
         for i in range(1, m):
-            Ei = I/dt + 0.5*self.solver.f_u(u[i-1]);
-            Gi = I*(-1.0/dt) + 0.5*self.solver.f_u(u[i]); 
+            Ei = np.asarray(I/dt + 0.5*self.solver.f_u(u[i-1]));
+            Gi = np.asarray(I*(-1.0/dt) + 0.5*self.solver.f_u(u[i])); 
             fi = np.zeros(nstate);
             fi = (u[i,:] - u[i-1,:])/dt;
             ju_i_plus_half = self.functional.j_u(u[i]);
             ju_i_minus_half = self.functional.j_u(u[i-1]);
             b[(i-1)*nstate:i*nstate] = -1.0*((Gi @ ju_i_plus_half) + (Ei @ ju_i_minus_half) + 
                                         (0.5*(self.functional.j_val(u[i]) + self.functional.j_val(u[i-1])) - javg)/self.alpha_squared*fi);
+            if i==1:
+                G0 = I*(-1.0/dt) + 0.5*self.solver.f_u(u[i-1]);
+                interm_vec = np.zeros(nstate);
+                interm_vec[:] = G0.T @ adjoint_bc;
+                b[(i-1)*nstate:i*nstate] -= (Ei @ interm_vec);
+            elif i==(m-1):
+                Em = I/dt + 0.5*self.solver.f_u(u[i]);
+                interm_vec = np.zeros(nstate);
+                interm_vec[:] = Em.T @ adjoint_bc
+                b[(i-1)*nstate:i*nstate] -= (Gi @ interm_vec);
         
             # Fill in data for B and C
             for j in range(nstate):
@@ -70,7 +80,9 @@ class LSSadjoint:
         adjoint_array = np.zeros((m+1,nstate));
         for i in range(1, m):
             adjoint_array[i] = adjoint_vec[(i-1)*nstate:i*nstate];
-
+        
+        adjoint_array[0] = adjoint_bc;
+        adjoint_array[-1] = adjoint_bc;
         return adjoint_array;
 
     def plot_shadowing_direction(self, v, eta): 
