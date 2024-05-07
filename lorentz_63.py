@@ -40,10 +40,7 @@ class Lorentz_63:
         return df_dz0;
         
     
-    def compute_trajectory(self):
-        u0 = np.ones(3);
-        u0[0] = 8.0;
-
+    def compute_trajectory(self,u0):
         # Integrate to get u on the attractor.
         T = 50.0;
         n_pre_steps = round(T/self.dt); 
