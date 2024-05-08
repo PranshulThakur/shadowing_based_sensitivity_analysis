@@ -3,9 +3,11 @@ from lss_adjoint import *
 from functional_lorentz import *
 import numpy as np;
 dt = 0.02;
-T_final = 100.0;
-n_times = 100;
+T_final = 500.0;
+n_times = 250;
 T_array = np.linspace(1.0,T_final,n_times);
+mvals = np.round(T_array/dt);
+T_array = mvals*dt;
 sensitivity_vals = np.zeros(n_times);
 sensitivity_errs = np.zeros(n_times);
 sensitivity_convergence_ref1 = np.zeros(n_times);
@@ -33,11 +35,15 @@ for i in range(n_times):
     sensitivity_convergence_ref1[i] = C1/np.sqrt(T);
     sensitivity_convergence_ref2[i] = C2/T;
 
+np.savetxt("times.txt",T_array);
+np.savetxt("sensitivity_errors.txt",sensitivity_errs);
+#np.loadtxt("filename");
+
 from matplotlib import pyplot as plt;
 plt.loglog(T_array, sensitivity_errs,'*', label="Error in sensitivity");
 plt.loglog(T_array, sensitivity_convergence_ref1,'--', label="O(1/sqrt(T))");
 plt.loglog(T_array, sensitivity_convergence_ref2,'--', label="O(1/T)");
-plt.title("Error in sensitivity vs T using adjoint_BC = [10,10,10] at 0 and T.");
+plt.title("Error in sensitivity vs T.");
 plt.xlabel("Integration length T");
 plt.ylabel("Error in sensitivity");
 plt.legend();
