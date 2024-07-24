@@ -7,9 +7,13 @@ def run_time_dependence_convergence():
     dt = 0.02;
     T_final = 500.0;
     n_times = 250;
-    T_array = np.linspace(1.0,T_final,n_times);
-    mvals = np.round(T_array/dt);
-    T_array = mvals*dt;
+    # Compute T_array
+    T_array = np.zeros(n_times);
+    Tlog10 = np.log10(T_final);
+    for i in range(n_times):
+       exponent = i*Tlog10/(n_times-1.0);
+       T_array[i] = round((10.0**exponent)/dt) * dt;
+    
     sensitivity_vals = np.zeros(n_times);
     sensitivity_errs = np.zeros(n_times);
     sensitivity_convergence_ref1 = np.zeros(n_times);
@@ -19,8 +23,7 @@ def run_time_dependence_convergence():
     n_avgs = 20;
     adjoint_bc = np.zeros(3);
     for i in range(n_times):
-        T = T_array[i];
-        m_steps = round(T/dt);
+        m_steps = round(T_array[i]/dt);
         lorentz_solver = Lorentz_63(dt, m_steps);
         functional = FunctionalLorentz(m_steps);
         lss_adjoint =  LSSadjoint(lorentz_solver,functional);
@@ -34,8 +37,8 @@ def run_time_dependence_convergence():
         sensitivity_avg /= n_avgs;
         sensitivity_vals[i] = sensitivity_avg;
         sensitivity_errs[i] = np.fabs(sensitivity_vals[i] - 1.0);
-        sensitivity_convergence_ref1[i] = C1/np.sqrt(T);
-        sensitivity_convergence_ref2[i] = C2/T;
+        sensitivity_convergence_ref1[i] = C1/np.sqrt(T_array[i]);
+        sensitivity_convergence_ref2[i] = C2/T_array[i];
 
     np.savetxt("times.txt",T_array);
     np.savetxt("sensitivity_errors.txt",sensitivity_errs);
@@ -121,6 +124,7 @@ def run_grid_convergence():
     plt.legend();
     plt.show();
 
-run_grid_convergence();
+#run_grid_convergence();
+run_time_dependence_convergence();
 
     
