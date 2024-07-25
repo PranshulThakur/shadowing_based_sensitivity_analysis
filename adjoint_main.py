@@ -113,6 +113,9 @@ def run_grid_convergence():
     C1 = 8.0;
     expected_errs_second_order = C2*(h_array**2);
     expected_errs_first_order = C1*(h_array**1);
+    np.savetxt("h_array.txt",h_array);
+    np.savetxt("sensitivity_errs_second_order.txt",sensitivity_errs_second_order);
+    np.savetxt("sensitivity_errs_first_order.txt",sensitivity_errs_first_order);
     from matplotlib import pyplot as plt;
     plt.loglog(h_array, sensitivity_errs_second_order,'-*', label="From second order adjoint");
     plt.loglog(h_array, expected_errs_second_order,'--', label="O(h^2)");
@@ -124,7 +127,7 @@ def run_grid_convergence():
     plt.legend();
     plt.show();
 
-#run_grid_convergence();
-run_time_dependence_convergence();
+run_grid_convergence();
+#run_time_dependence_convergence();
 
     
