@@ -5,8 +5,8 @@ import numpy as np;
 
 def run_time_dependence_convergence():
     dt = 0.02;
-    T_final = 500.0;
-    n_times = 250;
+    T_final = 800.0;
+    n_times = 400;
     # Compute T_array
     T_array = np.zeros(n_times);
     Tlog10 = np.log10(T_final);
@@ -21,7 +21,7 @@ def run_time_dependence_convergence():
     C1 = 0.04;
     C2 = 0.7;
     n_avgs = 20;
-    adjoint_bc = np.zeros(3);
+    adjoint_bc = 1.0*np.ones(3);
     for i in range(n_times):
         m_steps = round(T_array[i]/dt);
         lorentz_solver = Lorentz_63(dt, m_steps);
@@ -127,7 +127,48 @@ def run_grid_convergence():
     plt.legend();
     plt.show();
 
-run_grid_convergence();
-#run_time_dependence_convergence();
+
+def run_eigenvalue_convergence():
+    dt = 0.02;
+    T_final = 100.0;
+    n_times = 10;
+    # Compute T_array
+    T_array = np.zeros(n_times);
+    Tlog10 = np.log10(T_final);
+    for i in range(n_times):
+       exponent = i*Tlog10/(n_times-1.0);
+       T_array[i] = round((10.0**exponent)/dt) * dt;
+    
+    conditioning_vals = np.zeros(n_times);
+    C1 = 0.04;
+    C2 = 0.7;
+    n_avgs = 20;
+    adjoint_bc = 1.0*np.ones(3);
+    for i in range(n_times):
+        m_steps = round(T_array[i]/dt);
+        lorentz_solver = Lorentz_63(dt, m_steps);
+        functional = FunctionalLorentz(m_steps);
+        lss_adjoint =  LSSadjoint(lorentz_solver,functional);
+        conditioning_avg = 0.0;
+        for j in range(n_avgs):
+            u0 = np.random.rand(3);
+            u = lorentz_solver.compute_trajectory(u0);
+            conditioning_avg += lss_adjoint.compute_adjoint_solution(u,adjoint_bc, compute_condition_number=True);
+
+        conditioning_avg /= n_avgs;
+        conditioning_vals[i] = conditioning_avg;
+
+    np.savetxt("times.txt",T_array);
+    np.savetxt("conditioning_vals.txt",conditioning_vals);
+    #np.loadtxt("filename");
+
+    from matplotlib import pyplot as plt;
+    plt.loglog(T_array, conditioning_vals,'*', label="Conditioning constant");
+    plt.title("Condition number vs T.");
+    plt.xlabel("Integration length T");
+    plt.ylabel("Condition number");
+    plt.show();
+
+run_eigenvalue_convergence();
 
     

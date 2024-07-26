@@ -8,7 +8,7 @@ class LSSadjoint:
         self.functional = functional;
         self.alpha_squared = 10.0**2;
 
-    def compute_adjoint_solution(self,u,adjoint_bc,m=None, dt = None):
+    def compute_adjoint_solution(self,u,adjoint_bc,m=None, dt = None, compute_condition_number=False):
         if m is None:
             m=self.solver.m_steps;
         if dt is None:
@@ -73,19 +73,22 @@ class LSSadjoint:
         BBT = B @ BT;
         CCT = C @ CT;
         sysmatrix = BBT + (1.0/self.alpha_squared)*CCT;
-        
 
-        adjoint_vec = np.zeros((m-1)*nstate);
+        if compute_condition_number:
+            return 1.0/scipy.sparse.linalg.eigsh(sysmatrix,k=1,which='SM')[0]; 
 
-        adjoint_vec = spsolve(sysmatrix,b);
+        else:
+            adjoint_vec = np.zeros((m-1)*nstate);
 
-        adjoint_array = np.zeros((m+1,nstate));
-        for i in range(1, m):
-            adjoint_array[i] = adjoint_vec[(i-1)*nstate:i*nstate];
-        
-        adjoint_array[0] = adjoint_bc;
-        adjoint_array[-1] = adjoint_bc;
-        return adjoint_array;
+            adjoint_vec = spsolve(sysmatrix,b);
+
+            adjoint_array = np.zeros((m+1,nstate));
+            for i in range(1, m):
+                adjoint_array[i] = adjoint_vec[(i-1)*nstate:i*nstate];
+            
+            adjoint_array[0] = adjoint_bc;
+            adjoint_array[-1] = adjoint_bc;
+            return adjoint_array;
 
     def plot_shadowing_direction(self, v, eta): 
         m = self.solver.m_steps;
