@@ -131,7 +131,7 @@ def run_grid_convergence():
 def run_eigenvalue_convergence():
     dt = 0.02;
     T_final = 100.0;
-    n_times = 10;
+    n_times = 40;
     # Compute T_array
     T_array = np.zeros(n_times);
     Tlog10 = np.log10(T_final);
@@ -143,7 +143,7 @@ def run_eigenvalue_convergence():
     C1 = 0.04;
     C2 = 0.7;
     n_avgs = 20;
-    adjoint_bc = 1.0*np.ones(3);
+    adjoint_bc = np.zeros(3);
     for i in range(n_times):
         m_steps = round(T_array[i]/dt);
         lorentz_solver = Lorentz_63(dt, m_steps);
@@ -158,7 +158,7 @@ def run_eigenvalue_convergence():
         conditioning_avg /= n_avgs;
         conditioning_vals[i] = conditioning_avg;
 
-    np.savetxt("times.txt",T_array);
+    np.savetxt("times_conditioning.txt",T_array);
     np.savetxt("conditioning_vals.txt",conditioning_vals);
     #np.loadtxt("filename");
 
