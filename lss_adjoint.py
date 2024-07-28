@@ -75,7 +75,9 @@ class LSSadjoint:
         sysmatrix = BBT + (1.0/self.alpha_squared)*CCT;
 
         if compute_condition_number:
-            return 1.0/scipy.sparse.linalg.eigsh(sysmatrix,k=1,which='SM')[0]; 
+            #return 1.0/(scipy.sparse.linalg.eigsh(sysmatrix,k=1,which='SM',tol=1.0e-10,return_eigenvectors=False)[0]); 
+            #return 1.0/(scipy.sparse.linalg.eigsh(sysmatrix,k=1,which='SM')[0]); 
+            return 1.0/(scipy.sparse.linalg.eigsh(sysmatrix,k=1,sigma=0,return_eigenvectors=False)[0]); 
 
         else:
             adjoint_vec = np.zeros((m-1)*nstate);
