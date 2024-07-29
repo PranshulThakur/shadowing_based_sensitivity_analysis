@@ -2,6 +2,7 @@ from lorentz_63 import *
 from lss_adjoint import *
 from functional_lorentz import *
 import numpy as np;
+import time;
 
 def run_time_dependence_convergence():
     dt = 0.02;
@@ -169,6 +170,30 @@ def run_eigenvalue_convergence():
     plt.ylabel("Condition number");
     plt.show();
 
-run_eigenvalue_convergence();
+def check_one_run_time():
+    start_time = time.time();
+    dt = 0.01;
+    T = 1500.0;
+    adjoint_bc = 1.0*np.ones(3);
+    m_steps = round(T/dt);
+    lorentz_solver = Lorentz_63(dt, m_steps);
+    functional = FunctionalLorentz(m_steps);
+    lss_adjoint =  LSSadjoint(lorentz_solver,functional);
+    u0 = np.random.rand(3);
+    u = lorentz_solver.compute_trajectory(u0);
+    lss_adjoint.compute_adjoint_solution(u,adjoint_bc, compute_condition_number=True);
+    #lss_adjoint.compute_adjoint_solution(u,adjoint_bc);
+    elapsed_time = time.time() - start_time;
+    print("--- %s seconds ---" % (elapsed_time));
+    return elapsed_time;
+
+def required_computecanada_time(elapsed_time_ref):
+    n_avg = 20;
+    n_times = 200;
+    required_time = elapsed_time_ref*n_avg*n_times/3600.0;
+    print("Requires ",required_time," hours of compute time.");
+
+
+required_computecanada_time(check_one_run_time());
 
     
