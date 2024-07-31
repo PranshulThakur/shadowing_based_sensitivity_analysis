@@ -1,9 +1,9 @@
 from matplotlib import pyplot as plt
 import numpy as np
 
-
-filename_sensitivity = "sensitivity_errors_hom_bc_T_convergence.txt";
-filename_time = "times_hom_bc_T_convergence.txt";
+'''
+filename_sensitivity = "sensitivity_errors.txt";
+filename_time = "times.txt";
 
 sensitivity_errs = np.loadtxt(filename_sensitivity);
 T_array = np.loadtxt(filename_time);
@@ -15,9 +15,9 @@ plt.loglog(T_array, sensitivity_convergence_ref2,'--', label=r"$\mathcal{O}(1/T)
 plt.xlabel("Integration length T",fontsize=12);
 plt.ylabel("Error in sensitivity",fontsize=12);
 plt.legend(fontsize=11);
-plt.savefig('newfig.eps', format='eps')
+plt.savefig('newfig1.pdf', format='pdf')
 plt.show();
-
+'''
 
 '''
 h_array = np.loadtxt('h_array.txt');
@@ -36,20 +36,10 @@ plt.savefig('newfig.eps', format='eps')
 plt.show();
 '''
 
-'''
-filename_sensitivity = "sensitivity_errors_nonhom_bc_T_convergence.txt";
-filename_time = "times_nonhom_bc_T_convergence.txt";
-
-sensitivity_errs = np.loadtxt(filename_sensitivity);
-T_array = np.loadtxt(filename_time);
-sensitivity_convergence_ref1 = 0.005/np.sqrt(T_array);
-sensitivity_convergence_ref2 = 0.02/T_array;
-plt.loglog(T_array, sensitivity_errs,'*', label="Error in sensitivity");
-plt.loglog(T_array, sensitivity_convergence_ref1,'--', label=r"$\mathcal{O}(1/\sqrt{T})$");
-plt.loglog(T_array, sensitivity_convergence_ref2,'--', label=r"$\mathcal{O}(1/T)$");
-plt.xlabel("Integration length T",fontsize=12);
-plt.ylabel("Error in sensitivity",fontsize=12);
-plt.legend(fontsize=11);
+T_array = np.loadtxt("times_conditioning.txt");
+conditioning_vals = np.loadtxt("conditioning_vals.txt");
+plt.semilogy(T_array, conditioning_vals,'*', label="Conditioning constant");
+plt.xlabel("Integration length T", fontsize=12);
+plt.ylabel("Condition number", fontsize=12);
 plt.savefig('newfig.eps', format='eps')
 plt.show();
-'''

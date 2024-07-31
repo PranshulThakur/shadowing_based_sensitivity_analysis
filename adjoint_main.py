@@ -131,7 +131,7 @@ def run_grid_convergence():
 
 def run_eigenvalue_convergence():
     dt = 0.02;
-    T_final = 50000.0;
+    T_final = 50000.0; # With alpha_squared=1.0;
     n_times = 1000;
     # Compute T_array
     T_array = np.zeros(n_times);
