@@ -131,8 +131,8 @@ def run_grid_convergence():
 
 def run_eigenvalue_convergence():
     dt = 0.02;
-    T_final = 100.0;
-    n_times = 40;
+    T_final = 50000.0;
+    n_times = 1000;
     # Compute T_array
     T_array = np.zeros(n_times);
     Tlog10 = np.log10(T_final);
@@ -143,7 +143,7 @@ def run_eigenvalue_convergence():
     conditioning_vals = np.zeros(n_times);
     C1 = 0.04;
     C2 = 0.7;
-    n_avgs = 20;
+    n_avgs = 1;
     adjoint_bc = np.zeros(3);
     for i in range(n_times):
         m_steps = round(T_array[i]/dt);
@@ -188,12 +188,13 @@ def check_one_run_time():
     return elapsed_time;
 
 def required_computecanada_time(elapsed_time_ref):
-    n_avg = 20;
-    n_times = 200;
+    n_avg = 1;
+    n_times = 500;
     required_time = elapsed_time_ref*n_avg*n_times/3600.0;
     print("Requires ",required_time," hours of compute time.");
 
 
-required_computecanada_time(check_one_run_time());
+#required_computecanada_time(check_one_run_time());
+run_eigenvalue_convergence();
 
     
