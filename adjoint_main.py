@@ -5,9 +5,9 @@ import numpy as np;
 import time;
 
 def run_time_dependence_convergence():
-    dt = 0.02;
-    T_final = 800.0;
-    n_times = 400;
+    dt = 0.015;
+    T_final = 1000.0;
+    n_times = 500;
     # Compute T_array
     T_array = np.zeros(n_times);
     Tlog10 = np.log10(T_final);
@@ -22,7 +22,7 @@ def run_time_dependence_convergence():
     C1 = 0.04;
     C2 = 0.7;
     n_avgs = 20;
-    adjoint_bc = 1.0*np.ones(3);
+    adjoint_bc = (1.0/4.0)*np.ones(3);
     for i in range(n_times):
         m_steps = round(T_array[i]/dt);
         lorentz_solver = Lorentz_63(dt, m_steps);
