@@ -27,12 +27,12 @@ class KuramotoSivashinsky:
                 u_minus1 = u[i-1];
                 u_plus2 = u[i+2];
                 u_minus2 = 0.0;
-            elif i==(n_int_grid_points-1):
+            elif i==(self.n_int_grid_points-1):
                 u_plus1 = 0.0;
                 u_minus1 = u[i-1];
                 u_plus2 = u[i];
                 u_minus2 = u[i-2];
-            elif i==(n_int_grid_points-2):
+            elif i==(self.n_int_grid_points-2):
                 u_plus1 = u[i+1];
                 u_minus1 = u[i-1];
                 u_plus2 = 0.0;
@@ -76,7 +76,7 @@ class KuramotoSivashinsky:
         elif j==(i+1):
             val = 1.0/(self.dx**2);
         elif j==(i-1):
-            val = 1.0/self.dx**2);
+            val = 1.0/(self.dx**2);
 
         return val;
 
@@ -123,46 +123,44 @@ class KuramotoSivashinsky:
         
         return df_dc;
         
-        df_dz0 = np.zeros(len(u));
-        df_dz0[0] = 0.0;
-        df_dz0[1] = u[0];
-        df_dz0[2] = self.beta;
-        return df_dz0;
-        
     
     def compute_trajectory(self,u0):
         # Integrate to get u on the attractor.
-        T = 50.0;
+        T = 100.0;
         n_pre_steps = round(T/self.dt); 
-        for i in range(n_pre_steps):
-            ti = i*self.dt + self.dt/2.0;
-            u0 = rk4vec(ti,3,u0,self.dt,self.f);
-
-        # Integrate and store the trajectory 
-        u = np.zeros((self.m_steps,3)); # u[i] stores u_{i+1/2}
+        u = np.zeros((n_pre_steps, self.n_int_grid_points)); # u[i] stores u_{i+1/2}
         u[0,:] = u0;
-        for i in range(self.m_steps-1):
+        for i in range(n_pre_steps-1):
             ti = i*self.dt + self.dt/2.0;
-            u[i+1] = rk4vec(ti,3,u[i],self.dt,self.f);
+            u[i+1,:] = rk4vec(ti,self.n_int_grid_points,u[i,:],self.dt,self.f);
         
         return u;
+    '''
+            # Integrate and store the trajectory 
+            u = np.zeros((self.m_time_steps,3)); # u[i] stores u_{i+1/2}
+            u[0,:] = u0;
+            for i in range(self.m_time_steps-1):
+                ti = i*self.dt + self.dt/2.0;
+                u[i+1] = rk4vec(ti,3,u[i],self.dt,self.f);
+    '''        
 
-    def plot_components(self,u):
+    def plot_trajectory(self,u):
         # Get times
-        times = np.zeros(self.m_steps);
-        for i in range(self.m_steps):
+        times = np.zeros(self.m_time_steps);
+        for i in range(self.m_time_steps):
             times[i] = i*self.dt + self.dt/2.0;
 
+        x_vals = np.zeros(self.n_int_grid_points);
+        for i in range(self.n_int_grid_points):
+            x_vals[i] = self.dx*(i+1.0);
+
         import matplotlib.pyplot as plt;
+        x_array, times_array = np.meshgrid(x_vals,times);
         plt.figure();
-        plt.plot(times, u[:,0], linewidth = 2, color = 'b', label = "x");
-        plt.plot(times, u[:,1], linewidth = 2, color = 'r', label = "y");
-        plt.plot(times, u[:,2], linewidth = 2, color = 'g', label = "z");
-        plt.grid(True);
+        plt.contourf(times_array, x_array, u);
         plt.xlabel("t");
-        plt.ylabel("x, y, z");
-        plt.title ( 'Lorenz Time Series Plot' );
-        plt.legend();
+        plt.ylabel("x");
+        plt.title ( 'KS solution' );
         plt.show();
         return;
 
