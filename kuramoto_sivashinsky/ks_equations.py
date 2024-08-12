@@ -7,7 +7,7 @@ class KuramotoSivashinsky:
         self.m_time_steps = m_time_steps;
         self.n_int_grid_points = n_int_grid_points;
         self.L = 128.0;
-        self.c = 0.8;
+        self.c = 0.5;
         self.dx = self.L/(self.n_int_grid_points + 1.0);
     
     def f(self,t,m,u):
