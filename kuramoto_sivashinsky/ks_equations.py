@@ -42,7 +42,7 @@ class KuramotoSivashinsky:
                 u_minus1 = u[i-1];
                 u_plus2 = u[i+2];
                 u_minus2 = u[i-2];
-
+            
             dudx = (u_plus1 - u_minus1)/(2.0*self.dx);
             ududx = (u_plus1**2 - u_minus1**2)/(4.0*self.dx);
             d2udx2 = (u_plus1 - 2.0*u[i] + u_minus1)/(self.dx**2);
@@ -126,7 +126,7 @@ class KuramotoSivashinsky:
     
     def compute_trajectory(self,u0):
         # Integrate to get u on the attractor.
-        T = 100.0;
+        T = 500.0;
         n_pre_steps = round(T/self.dt); 
         u = np.zeros((n_pre_steps, self.n_int_grid_points)); # u[i] stores u_{i+1/2}
         u[0,:] = u0;
@@ -135,14 +135,6 @@ class KuramotoSivashinsky:
             u[i+1,:] = rk4vec(ti,self.n_int_grid_points,u[i,:],self.dt,self.f);
         
         return u;
-    '''
-            # Integrate and store the trajectory 
-            u = np.zeros((self.m_time_steps,3)); # u[i] stores u_{i+1/2}
-            u[0,:] = u0;
-            for i in range(self.m_time_steps-1):
-                ti = i*self.dt + self.dt/2.0;
-                u[i+1] = rk4vec(ti,3,u[i],self.dt,self.f);
-    '''        
 
     def plot_trajectory(self,u):
         # Get times
@@ -157,9 +149,12 @@ class KuramotoSivashinsky:
         import matplotlib.pyplot as plt;
         x_array, times_array = np.meshgrid(x_vals,times);
         plt.figure();
-        plt.contourf(times_array, x_array, u);
-        plt.xlabel("t");
-        plt.ylabel("x");
+        contourplot = plt.contourf(x_array, times_array, u, 50,cmap='jet');
+        cbar = plt.colorbar(contourplot);
+        plt.axis('equal');
+        plt.axis('scaled');
+        plt.xlabel("x");
+        plt.ylabel("t");
         plt.title ( 'KS solution' );
         plt.show();
         return;

@@ -2,8 +2,8 @@ from  ks_equations import *;
 import numpy as np;
 
 n_int_grid_points = 127;
-dt = 0.25;
-T_final = 100.0;
+dt = 0.1;
+T_final = 500.0;
 m_time_steps = round(T_final/dt);
 
 L=128.0;
