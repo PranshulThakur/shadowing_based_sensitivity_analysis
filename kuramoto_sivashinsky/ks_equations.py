@@ -50,6 +50,17 @@ class KuramotoSivashinsky:
             f_val[i] = -(ududx + self.c*dudx + d2udx2 + d4udx4);
         
         return f_val;
+    
+    def f_u(self,u):
+        jac = np.zeros((len(u),len(u)));
+        for i in range(self.n_int_grid_points):
+            jaray = np.linspace(i-2,i+2,5,dtype=int);
+            for j in jaray:
+                if j>=0 and j<=(self.n_int_grid_points-1):
+                    jac[i,j] = -self.ududx_du(i,j,u) - self.c*self.dudx_du(i,j) - self.d2udx2_du(i,j) - self.d4udx4_du(i,j);
+        
+        return jac;
+
 
     def dudx_du(self,i,j):
         val = 0.0;
@@ -95,14 +106,6 @@ class KuramotoSivashinsky:
         val /= self.dx**4;
         return val;
 
-    def f_u(self,u):
-        jac = np.zeros((len(u),len(u)));
-        for i in range(self.n_int_grid_points):
-            for j in range(self.n_int_grid_points):
-                jac[i,j] = -ududx_du(i,j,u) - c*dudx_du(i,j) - d2udx2_du(i,j) - d4udx4_du(i,j);
-        
-        return jac;
-
     def f_c(self,u): 
         df_dc = np.zeros(len(u));
         u_plus1 = 0.0;
@@ -111,7 +114,7 @@ class KuramotoSivashinsky:
             if i==0: #i=1
                 u_plus1 = u[i+1];
                 u_minus1 = 0.0;
-            elif i==(n_int_grid_points-1):
+            elif i==(self.n_int_grid_points-1):
                 u_plus1 = 0.0;
                 u_minus1 = u[i-1];
             else:
@@ -127,10 +130,14 @@ class KuramotoSivashinsky:
     def compute_trajectory(self,u0):
         # Integrate to get u on the attractor.
         T = 500.0;
-        n_pre_steps = round(T/self.dt); 
-        u = np.zeros((n_pre_steps, self.n_int_grid_points)); # u[i] stores u_{i+1/2}
-        u[0,:] = u0;
+        n_pre_steps = round(T/self.dt);
         for i in range(n_pre_steps-1):
+            ti = i*self.dt + self.dt/2.0;
+            u0 = rk4vec(ti,self.n_int_grid_points,u0,self.dt,self.f);
+
+        u = np.zeros((self.m_time_steps, self.n_int_grid_points)); # u[i] stores u_{i+1/2}
+        u[0,:] = u0;
+        for i in range(self.m_time_steps-1):
             ti = i*self.dt + self.dt/2.0;
             u[i+1,:] = rk4vec(ti,self.n_int_grid_points,u[i,:],self.dt,self.f);
         
