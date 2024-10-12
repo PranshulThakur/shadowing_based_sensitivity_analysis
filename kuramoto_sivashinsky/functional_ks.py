@@ -10,15 +10,15 @@ class FunctionalKS:
         
         j=0.0;
         for i in range(self.n_int_grid_points):
-            j += ui[i]**2;
+            j += ui[i];
 
         j/=(self.n_int_grid_points+1.0);
-        return j; # return z.
+        return j; 
 
     def j_u(self,ui):
         ju = np.zeros(self.n_int_grid_points);
         for i in range(self.n_int_grid_points):
-            ju[i] = 1.0/(self.n_int_grid_points+1.0)*2.0*ui[i];
+            ju[i] = 1.0/(self.n_int_grid_points+1.0);
         
         return ju;
 

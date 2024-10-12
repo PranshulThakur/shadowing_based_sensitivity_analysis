@@ -7,9 +7,27 @@ class KuramotoSivashinsky:
         self.m_time_steps = m_time_steps;
         self.n_int_grid_points = n_int_grid_points;
         self.L = 128.0;
-        self.c = 0.5;
+        self.c = 0.0;
         self.dx = self.L/(self.n_int_grid_points + 1.0);
-    
+   
+    def g(self,x):
+        g_val = x/self.L * (x-self.L)/self.L;
+        g_val = g_val**2;
+        return g_val;
+
+    def dg_dx(self,x):
+        dgdx_val = 2.0/(self.L**2) * x * (x-self.L) * (2.0*x-self.L);
+        return dgdx_val;
+
+    def d2g_dx2(self,x):
+        d2gdx2_val = (x-self.L)*(2.0*x-self.L) + x*(2.0*x-self.L) + 2.0*x*(x-self.L);
+        d2gdx2_val *= 2.0/(self.L**2);
+        return d2gdx2_val;
+
+    def d4g_dx4(self,x):
+        d4gdx4_val = 24.0/(self.L**2);
+        return d4gdx4_val;
+
     def f(self,t,m,u):
         f_val = np.zeros(len(u));
         u_plus1 = 0.0;
@@ -43,21 +61,25 @@ class KuramotoSivashinsky:
                 u_plus2 = u[i+2];
                 u_minus2 = u[i-2];
             
+            xi = (i+1.0)*self.dx; 
             dudx = (u_plus1 - u_minus1)/(2.0*self.dx);
             ududx = (u_plus1**2 - u_minus1**2)/(4.0*self.dx);
             d2udx2 = (u_plus1 - 2.0*u[i] + u_minus1)/(self.dx**2);
             d4udx4 = (u_minus2 - 4.0*u_minus1 + 6.0*u[i] -4.0*u_plus1 + u_plus2)/(self.dx**4);
-            f_val[i] = -(ududx + self.c*dudx + d2udx2 + d4udx4);
+            f_val[i] = -(ududx + self.c*self.g(xi)*dudx + d2udx2 + d4udx4 + self.c*(u[i] + self.c*self.g(xi))*self.dg_dx(xi) + self.c*self.d2g_dx2(xi) + self.c*self.d4g_dx4(xi));
         
         return f_val;
     
     def f_u(self,u):
         jac = np.zeros((len(u),len(u)));
         for i in range(self.n_int_grid_points):
+            xi = (i+1.0)*self.dx; 
             jaray = np.linspace(i-2,i+2,5,dtype=int);
             for j in jaray:
                 if j>=0 and j<=(self.n_int_grid_points-1):
-                    jac[i,j] = -self.ududx_du(i,j,u) - self.c*self.dudx_du(i,j) - self.d2udx2_du(i,j) - self.d4udx4_du(i,j);
+                    jac[i,j] = -self.ududx_du(i,j,u) - self.c*self.g(xi)*self.dudx_du(i,j) - self.d2udx2_du(i,j) - self.d4udx4_du(i,j);
+
+            jac[i,i] = jac[i,i] - self.c*self.dg_dx(xi);
         
         return jac;
 
@@ -120,16 +142,18 @@ class KuramotoSivashinsky:
             else:
                 u_plus1 = u[i+1];
                 u_minus1 = u[i-1];
+            
+            xi = (i+1.0)*self.dx; 
 
             dudx = (u_plus1 - u_minus1)/(2.0*self.dx);
-            df_dc[i] = -dudx;
+            df_dc[i] = -self.g(xi)*dudx - self.d2g_dx2(xi) - self.d4g_dx4(xi) - (u[i] + self.c*self.g(xi))*delf.dg_dx(xi) - self.c*self.g(xi)*self.dg_dx(xi);
         
         return df_dc;
         
     
     def compute_trajectory(self,u0):
         # Integrate to get u on the attractor.
-        T = 500.0;
+        T = 1000.0;
         n_pre_steps = round(T/self.dt);
         for i in range(n_pre_steps-1):
             ti = i*self.dt + self.dt/2.0;
@@ -137,6 +161,7 @@ class KuramotoSivashinsky:
 
         u = np.zeros((self.m_time_steps, self.n_int_grid_points)); # u[i] stores u_{i+1/2}
         u[0,:] = u0;
+        times[0] = self.dt/2.0;
         for i in range(self.m_time_steps-1):
             ti = i*self.dt + self.dt/2.0;
             u[i+1,:] = rk4vec(ti,self.n_int_grid_points,u[i,:],self.dt,self.f);
