@@ -96,23 +96,24 @@ def run_eigenvalue_convergence():
 #run_eigenvalue_convergence();
 
 n_int_grid_points = 511;
-dt = 0.0001;
+dt = 0.5;
 T_final = 1000.0;
 m_time_steps = round(T_final/dt);
+L=128.0;
+dx = L/(n_int_grid_points+1.0);
+u0 = np.zeros(n_int_grid_points);
 
-for itrajectory in range(20):
-    L=128.0;
-    dx = L/(n_int_grid_points+1.0);
-    u0 = np.zeros(n_int_grid_points);
+for itrajectory in range(1):
     for i in range(n_int_grid_points):
         x = dx*(i+1);
         u0[i] = np.random.uniform(-0.5,0.5);
         
 
     ks_solver = KuramotoSivashinsky(dt,m_time_steps,n_int_grid_points);
-    u = ks_solver.compute_trajectory(u0);
-    filenme = "u_ks_511x_1000T__" + str(itrajectory) + ".txt"; 
-    np.savetxt(filename,u);
+    u = ks_solver.compute_trajectory_imex(u0);
+    ks_solver.plot_trajectory(u);
+    #filenme = "u_ks_511x_1000T__" + str(itrajectory) + ".txt"; 
+    #np.savetxt(filename,u);
 '''
 functional_ks = FunctionalKS(m_time_steps,n_int_grid_points);
 lss_adjoint = LSSadjoint(ks_solver, functional_ks);

@@ -242,6 +242,42 @@ def rk4vec ( t0, m, u0, dt, f ):
 
   return u
 
+def rk4imex(ti,n_int_grid_points,un,dt,f_explicit, A, Aop_invA_13, Aop_invA_12):
+    import numpy as np
+    g1 = np.zeros(n_int_grid_points);
+    g2 = np.zeros(n_int_grid_points);
+    g3 = np.zeros(n_int_grid_points);
+    g4 = np.zeros(n_int_grid_points);
+    f2 = np.zeros(n_int_grid_points);
+    f3 = np.zeros(n_int_grid_points);
+    f4 = np.zeros(n_int_grid_points);
+    u2 = np.zeros(n_int_grid_points);
+    u3 = np.zeros(n_int_grid_points);
+    u4 = np.zeros(n_int_grid_points);
+    un_plus_1 = np.zeros(n_int_grid_points);
+
+    g1 = f_explicit(un);
+    
+    u2 = un + dt/3.0*g1;
+    f2 = Aop_invA_13 @ u2;
+    u2 += dt/3.0*f2;
+    g2 = f_explicit(u2);
+
+    u3 = un + dt/2.0*f2 + dt*g2;
+    f3 = Aop_invA_12 @ u3;
+    u3 += dt/2.0*f3;
+    g3 = f_explicit(u3);
+
+    u4 = un + dt*3.0/4.0*f2 - dt*1.0/4.0*f3 + dt*3.0/4.0*g2 + dt*1.0/4.0*g3;
+    f4 = Aop_invA_12 @ u4;
+    u4 += dt/2.0*f4;
+    g4 = f_explicit(u4);
+
+    un_plus_1 = un + dt*3.0/4.0*(f2 + g2) - dt*1.0/4.0*(f3+g3) + dt*1.0/2.0*(f4+g4);
+    return un_plus_1;
+
+
+
 def rk4vec_test ( ):
 
 #*****************************************************************************80
