@@ -68,6 +68,8 @@ class LSSadjoint:
 
         B = scipy.sparse.csr_matrix((B_data, (B_rowindices,B_colindices)), shape=((m-1)*nstate,m*nstate));
         C = scipy.sparse.csr_matrix((C_data, (C_rowindices,C_colindices)), shape=((m-1)*nstate,m-1));
+        B.eliminate_zeros();
+        C.eliminate_zeros();
         BT = B.T.copy().tocsr();
         CT = C.T.copy().tocsr();
         BBT = B @ BT;

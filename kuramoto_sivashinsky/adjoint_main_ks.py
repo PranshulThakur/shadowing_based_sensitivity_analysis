@@ -96,12 +96,14 @@ def run_eigenvalue_convergence():
 #run_eigenvalue_convergence();
 
 n_int_grid_points = 511;
-dt = 0.5;
-T_final = 1000.0;
+dt = 0.1;
+T_final = 500.0;
 m_time_steps = round(T_final/dt);
 L=128.0;
 dx = L/(n_int_grid_points+1.0);
 u0 = np.zeros(n_int_grid_points);
+
+sensitivity_exact = -1.0/30.0*L*L;
 
 for itrajectory in range(1):
     for i in range(n_int_grid_points):
@@ -111,7 +113,20 @@ for itrajectory in range(1):
 
     ks_solver = KuramotoSivashinsky(dt,m_time_steps,n_int_grid_points);
     u = ks_solver.compute_trajectory_imex(u0);
-    ks_solver.plot_trajectory(u);
+    n_int_grid_points_coarse = 255;
+    dt_coarse = 1.0;
+    T_final_coarse = 500.0;
+    u_coarse = interpolate_trajectory_to_coarse_grid_and_time(u,dt,n_int_grid_points,L,T_final_coarse,dt_coarse,n_int_grid_points_coarse);
+    ks_solver.update_spacetime_grid(n_int_grid_points_coarse, dt_coarse, T_final_coarse);
+    ks_solver.plot_trajectory(u_coarse);
+    functional_ks = FunctionalKS(ks_solver.m_time_steps,ks_solver.n_int_grid_points);
+    lss_adjoint = LSSadjoint(ks_solver, functional_ks);
+    adjoint_bc = np.zeros(n_int_grid_points_coarse);
+    adjoint_array = lss_adjoint.compute_adjoint_solution(u_coarse,adjoint_bc);
+    sensitivity_numerical = functional_ks.compute_adjoint_sensitivity(adjoint_array, u_coarse, ks_solver);
+    print("Exact sensitivity = ",sensitivity_exact);
+    print("Numerical sensitivity = ",sensitivity_numerical);
+    print("Error in sensitivity = ", np.abs(sensitivity_numerical - sensitivity_exact));
     #filenme = "u_ks_511x_1000T__" + str(itrajectory) + ".txt"; 
     #np.savetxt(filename,u);
 '''
