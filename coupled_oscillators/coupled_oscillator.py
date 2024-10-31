@@ -110,10 +110,10 @@ class CoupledOscillator:
         fig = plt.figure();
         ax = fig.add_subplot(projection = "3d");
         ax.plot(u[:,2], u[:,3], a1_vec, linewidth = 2, color = "b");
-        ax.set_xlabel("x2");
-        ax.set_ylabel("y2");
-        ax.set_zlabel("a1");
-        ax.set_title ('Coupled oscillator: trajectory of solution');
+        ax.set_xlabel(r"$x_2$");
+        ax.set_ylabel(r"$y_2$");
+        ax.set_zlabel(r"$a_1$");
+        plt.savefig('attractor_coupled_oscillator.eps', format='eps')
         plt.show();
         return;
 

@@ -6,11 +6,17 @@ class FunctionalOscillator:
         self.nstate = 4;
 
     def j_val(self,ui):
-        return ui[2]; # return x2.
+        #a1 = ui[0]**2 + ui[1]**2;
+        #return (a1 + ui[2] + ui[3]); 
+        return ui[2];
 
     def j_u(self,ui):
         ju = np.zeros(self.nstate);
         ju[2] = 1.0;
+        #ju[0] = 2.0*ui[0];
+        #ju[1] = 2.0*ui[1];
+        #ju[2] = 1.0;
+        #ju[3] = 1.0;
         return ju;
 
     def j_s(self,ui):

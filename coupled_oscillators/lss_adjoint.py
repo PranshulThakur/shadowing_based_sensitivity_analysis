@@ -6,7 +6,7 @@ class LSSadjoint:
     def __init__(self, solver, functional):
         self.solver = solver;
         self.functional = functional;
-        self.alpha_squared = 10.0**2;
+        self.alpha_squared = 10.0;
 
     def compute_adjoint_solution(self,u,adjoint_bc,m=None, dt = None, compute_condition_number=False):
         if m is None:

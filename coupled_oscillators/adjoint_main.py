@@ -5,14 +5,16 @@ import numpy as np;
 import time;
 
 def run_time_dependence_convergence():
-    dt = 0.01;
-    T_final = 1000.0;
-    n_times = 500;
+    dt = 0.01;  # alpha^2 = 100 for adjoint_bc=0;
+    T_final = 100.0; #200
+    T_initial = 1.0; #1.0 for adjoint bc
+    n_times = 1000; #500
     # Compute T_array
     T_array = np.zeros(n_times);
-    Tlog10 = np.log10(T_final);
+    Tfinallog10 = np.log10(T_final);
+    Tinitiallog10 = np.log10(T_initial);
     for i in range(n_times):
-       exponent = i*Tlog10/(n_times-1.0);
+       exponent = Tinitiallog10 + i*(Tfinallog10-Tinitiallog10)/(n_times-1.0);
        T_array[i] = round((10.0**exponent)/dt) * dt;
     
     sensitivity_vals = np.zeros(n_times);
@@ -22,7 +24,7 @@ def run_time_dependence_convergence():
     C1 = 0.04;
     C2 = 0.7;
     n_avgs = 20;
-    adjoint_bc = np.zeros(4); #(1.0/4.0)*np.ones(3);
+    adjoint_bc = (1.0/5.0)*np.ones(4);
     for i in range(n_times):
         m_steps = round(T_array[i]/dt);
         coupled_oscillator = CoupledOscillator(dt,m_steps);
@@ -75,8 +77,8 @@ def get_u_interpolated(u,dt_fine,T_final,dt_coarse):
 
 
 def run_grid_convergence():
-    dt_fine = 0.0005;
-    T_final = 1000.0;
+    dt_fine = 0.01;  #Set alpha^2 = 1.
+    T_final = 200.0;
     m_steps_fine = round(T_final/dt_fine);
     coupled_oscillator = CoupledOscillator(dt_fine,m_steps_fine);
     n_random_trajectories = 10;
@@ -85,7 +87,7 @@ def run_grid_convergence():
     sensitivity_avg_second_order = np.zeros(n_grids);
     sensitivity_avg_first_order = np.zeros(n_grids);
     for i in range(n_grids):
-        h_array[i] = 1.0/(2.0**i);
+        h_array[i] = 10.0/(2.0**i);
 
     for ranindex in range(n_random_trajectories):
         u0 = np.random.rand(4);
@@ -96,7 +98,7 @@ def run_grid_convergence():
             m_steps_coarse = round(T_final/dt_coarse);
             functional = FunctionalOscillator(m_steps_coarse);
             lss_adjoint =  LSSadjoint(coupled_oscillator,functional);
-            adjoint_bc = np.zeros(4);
+            adjoint_bc = 10.0*np.ones(4);
             adjoint_array_second_order = lss_adjoint.compute_adjoint_solution(u_interpolated,adjoint_bc,m_steps_coarse,dt_coarse);
             sensitivity_avg_second_order[i] += functional.compute_adjoint_sensitivity(adjoint_array_second_order,u_interpolated,coupled_oscillator);
             adjoint_array_first_order = lss_adjoint.compute_adjoint_solution_first_order(u_interpolated,adjoint_bc,m_steps_coarse,dt_coarse);
@@ -130,7 +132,7 @@ def run_grid_convergence():
 
 def run_eigenvalue_convergence():
     dt = 0.01;
-    T_final = 25000.0; # With alpha_squared=1.0;
+    T_final = 2000.0; # With alpha_squared=100.0;
     n_times = 1000;
     # Compute T_array
     T_array = np.zeros(n_times);
@@ -194,14 +196,13 @@ def required_computecanada_time(elapsed_time_ref):
 
 
 #run_eigenvalue_convergence();
-#run_time_dependence_convergence();
-run_grid_convergence();
+run_time_dependence_convergence();
+#run_grid_convergence();
 '''
 u0 = np.random.rand(4);
-T_final = 100.0;
+T_final = 200.0;
 dt = 0.01;
 m_steps = round(T_final/dt);
-print(m_steps);
 coupled_oscillator = CoupledOscillator(dt,m_steps);
 functional = FunctionalOscillator(m_steps);
 u = coupled_oscillator.compute_trajectory(u0);
