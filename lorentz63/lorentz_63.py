@@ -64,10 +64,10 @@ class Lorentz_63:
             u0 = rk4vec(ti,3,u0,self.dt,self.f);
 
         # Integrate and store the trajectory 
-        u = np.zeros((self.m_steps,3)); # u[i] stores u_{i+1/2}
+        u = np.zeros((self.m_steps+1,3)); # u[i] stores u_{i+1/2}
         u[0,:] = u0;
-        for i in range(self.m_steps-1):
-            ti = i*self.dt + self.dt/2.0;
+        for i in range(self.m_steps):
+            ti = (i+1)*self.dt;
             u[i+1] = rk4vec(ti,3,u[i],self.dt,self.f);
         
         return u;

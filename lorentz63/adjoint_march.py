@@ -1,8 +1,9 @@
 import numpy as np;
 import scipy;
 from scipy.sparse.linalg import spsolve
+from rk4 import *
 
-class AdjointMarching:
+class AdjointMarch:
     def __init__(self, solver, functional, u_stored, times_stored,dt, n_subspace_vectors,delT,T):
         self.solver = solver;
         self.functional = functional;
@@ -12,12 +13,12 @@ class AdjointMarching:
         self.dt = dt;
         self.n_subspace_vectors = n_subspace_vectors;
         self.delT = delT;
-        self.T = t;
+        self.T = T;
 
     def get_u_at_time_t(self,t):
         u = np.zeros(self.nstate);
         for j in range(self.nstate):
-            u[j] = np.interp(t, times_stored, u_stored[:,j]);
+            u[j] = np.interp(t, self.times_stored, self.u_stored[:,j]);
 
         return u;
 
@@ -53,27 +54,38 @@ class AdjointMarching:
         return psi_vec;
             
 
-
     def compute_QR_matrices(self):
         W_T = np.zeros((self.nstate, self.n_subspace_vectors));
-        K = self.T/self.delT;
+        K = round(self.T/self.delT);
         R = np.zeros( (K,self.n_subspace_vectors, self.n_subspace_vectors) );
-        W_T = np.random.rand( (self.nstate, self.n_subspace_vectors) );
+        W_T = np.random.rand( self.nstate, self.n_subspace_vectors );
         W_prev = W_T;
-        nsteps = self.delT/self.dt;
+        nsteps = round(self.delT/self.dt);
         for i in range(K):
             ival = K-i-1;
-            ti = T - i*self.delT;
+            ti = self.T - i*self.delT;
             W_next = self.integrate_adjoint_hom(ti,nsteps,W_prev);
             W_prev = W_next[0,:,:];
-            W_prev, R[ival,:,:] = scipy.linalg.qr(W_prev);
-
+            W_prev, R[ival,:,:] = scipy.linalg.qr(W_prev,mode='economic');
+        
+        '''
         # Compute Lyapunov exponents.
-        lyapunov_exp = np.zeros ( (K,self.nstate) );
+        lyapunov_exp = np.zeros(self.n_subspace_vectors);
+        lyapunov_exp_stored = np.zeros( (K,self.n_subspace_vectors));
         for i in range(K):
             ival = K-i-1;
-            for j in range(self.nstate):
-                lyapunov_exp[ival,j] += R[ival,j,j]/self.delT;
+            for j in range(self.n_subspace_vectors):
+                lyapunov_exp[j] += np.log(np.abs(R[ival,j,j]));
+                lyapunov_exp_stored[ival,j] = lyapunov_exp[j]/( (i+1.0)*self.delT);
+
+        lyapunov_exp /= self.T;
+
+        print(lyapunov_exp);
+        import matplotlib.pyplot as plt;
+        plt.plot(lyapunov_exp_stored);
+        plt.show();
+        '''
+        return 0;
 
 
             

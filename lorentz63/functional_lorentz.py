@@ -19,7 +19,8 @@ class FunctionalLorentz:
 
     def compute_j_avg(self,u):
         javg = 0.0;
-        for i in range(self.m):
+        javg = (self.j_val(u[0]) + self.j_val(u[m]))/2.0;
+        for i in range(1,self.m):
             javg += self.j_val(u[i]);
 
         javg /= self.m;
@@ -39,9 +40,10 @@ class FunctionalLorentz:
 
     def compute_adjoint_sensitivity(self, adjoint_array, u, solver):
         sensitivity_val = 0.0;
-        for i in range(self.m):
-            fs = solver.f_z0(u[i]);
-            sensitivity_val += 0.5*(np.dot(adjoint_array[i],fs) + np.dot(adjoint_array[i+1],fs)) + self.j_s(u[i]);
+        for i in range(1,self.m+1):
+            fs_i = solver.f_z0(u[i]);
+            fs_iminus = solver.f_z0(u[i-1]);
+            sensitivity_val += 0.5*(np.dot(adjoint_array[i-1],fs_iminus) + np.dot(adjoint_array[i],fs_i) + self.j_s(u[i]) + self.j_s(u[i-1]));
 
         sensitivity_val /= self.m;
         return sensitivity_val;
