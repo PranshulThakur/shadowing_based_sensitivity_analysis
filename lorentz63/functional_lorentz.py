@@ -19,12 +19,21 @@ class FunctionalLorentz:
 
     def compute_j_avg(self,u):
         javg = 0.0;
-        javg = (self.j_val(u[0]) + self.j_val(u[m]))/2.0;
+        javg = (self.j_val(u[0]) + self.j_val(u[self.m]))/2.0;
         for i in range(1,self.m):
             javg += self.j_val(u[i]);
 
         javg /= self.m;
         return javg;
+    
+    def compute_js_avg(self,u):
+        js_avg = 0.0;
+        js_avg = (self.j_s(u[0]) + self.j_s(u[self.m]))/2.0;
+        for i in range(1,self.m):
+            js_avg += self.j_s(u[i]);
+
+        js_avg /= self.m;
+        return js_avg;
 
     def compute_forward_sensitivity(self,u,v,eta):
         sensitivity_val = 0.0;

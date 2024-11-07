@@ -5,7 +5,7 @@ import numpy as np;
 import time;
 
 
-T = 400.0;
+T = 200.0;
 dt = 0.01;
 m = round(T/dt);
 times_stored = np.zeros(m+1);
@@ -20,6 +20,9 @@ n_subspace_vectors = 1;
 delT = 0.05;
 adjoint_march = AdjointMarch(lorentz_solver, functional, u_stored, times_stored,dt, n_subspace_vectors,delT,T);
 adjoint_march.compute_QR_matrices();
+adjoint_march.compute_s_forwardmarch();
+sensitivity_val = adjoint_march.compute_sensitivity();
+print("Sensitivity = ",sensitivity_val);
 
 '''
 def run_time_dependence_convergence():
