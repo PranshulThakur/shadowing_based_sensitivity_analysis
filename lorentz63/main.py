@@ -5,24 +5,28 @@ import numpy as np;
 import time;
 
 
-T = 200.0;
+T = 100.0;
+T_extra = 20.0;
+T_total = T + T_extra;
 dt = 0.01;
 m = round(T/dt);
-times_stored = np.zeros(m+1);
-for i in range(m+1):
+m_total = round(T_total/dt);
+times_stored = np.zeros(m_total+1);
+for i in range(m_total+1):
     times_stored[i] = i*dt;
             
 u0 = np.random.rand(3);
-lorentz_solver = Lorentz_63(dt, m);
+lorentz_solver = Lorentz_63(dt, m_total);
 functional = FunctionalLorentz(m);
 u_stored = lorentz_solver.compute_trajectory(u0);
 n_subspace_vectors = 1;
-delT = 0.05;
-adjoint_march = AdjointMarch(lorentz_solver, functional, u_stored, times_stored,dt, n_subspace_vectors,delT,T);
+delT = 0.2;
+adjoint_march = AdjointMarch(lorentz_solver, functional, u_stored, times_stored,dt, n_subspace_vectors,delT,T,T_extra);
 adjoint_march.compute_QR_matrices();
 adjoint_march.compute_s_forwardmarch();
 sensitivity_val = adjoint_march.compute_sensitivity();
 print("Sensitivity = ",sensitivity_val);
+adjoint_march.plot_adjoint_solution();
 
 '''
 def run_time_dependence_convergence():
