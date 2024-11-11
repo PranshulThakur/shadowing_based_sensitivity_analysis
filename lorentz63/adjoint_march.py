@@ -25,9 +25,23 @@ class AdjointMarch:
         self.R = np.zeros( (self.K, self.n_subspace_vectors, self.n_subspace_vectors) );
         self.s = np.zeros( (self.K, self.n_subspace_vectors) );
         self.jbar = self.functional.compute_j_avg(self.u_stored[0:self.m+1,:]);
+        self.s0_initial = np.zeros(self.n_subspace_vectors);
         # To plot adjoint solution
         self.Y_stored = np.zeros( (self.K,(self.nsteps+1),self.nstate,self.n_subspace_vectors));
         self.v_stored = np.zeros( (self.K,(self.nsteps+1),self.nstate));
+
+    def compute_s0_initial(self,Q,v):
+        u = self.get_u_at_time_t(0.0);
+        f = self.solver.f(0.0,self.nstate,u);
+        j = self.functional.j_val(u);
+        w = np.zeros(self.n_subspace_vectors);
+        w = Q.T @ f;
+        w_norm = np.sqrt(np.dot(w,w));
+        rhs = self.jbar - j - np.dot(f,v);
+        if w_norm > 1.0e-6:
+            self.s0_initial = (rhs/(w_norm*w_norm))*w;
+        
+        return 0;
 
     def compute_sensitivity(self):
         sensitivity_val = 0.0;
@@ -51,7 +65,7 @@ class AdjointMarch:
         return 0;
                 
     def compute_s_forwardmarch(self): 
-        self.solve_triangular(self.R[0,:,:], self.s[0,:], self.b[0,:]);
+        self.solve_triangular(self.R[0,:,:], self.s[0,:], (self.b[0,:] + self.s0_initial) );
         for i in range(1,self.K):
             self.solve_triangular(self.R[i,:,:], self.s[i,:], (self.b[i,:] + self.s[i-1,:]) );
         
@@ -161,8 +175,11 @@ class AdjointMarch:
             v = v + (Q @ self.b[ival,:]);
             Y = Q;
         
-        ''' 
-        # Compute Lyapunov exponents.
+        self.compute_s0_initial(Q,v);
+        
+        return 0;
+
+    def compute_lyapunov_exponents(self):
         lyapunov_exp = np.zeros(self.n_subspace_vectors);
         lyapunov_exp_stored = np.zeros( (self.K,self.n_subspace_vectors));
         for i in range(self.K):
@@ -177,9 +194,8 @@ class AdjointMarch:
         import matplotlib.pyplot as plt;
         plt.plot(lyapunov_exp_stored);
         plt.show();
-        '''
         return 0;
-
+        
     def plot_adjoint_solution(self):
         m = round(self.T/self.dt);
         adjoint_vec = np.zeros((m+1,self.nstate));
@@ -214,6 +230,8 @@ class AdjointMarch:
        
         average_f_dot_adjoint/=m; 
         print("Average f_dot_adjoint = ",average_f_dot_adjoint);
+        print("f_dot_adjoint initial = ", f_dot_adjoint[0] - self.jbar + self.functional.j_val(self.u_stored[0,:]) );
+        print("f_dot_adjoint final = ",f_dot_adjoint[m] - self.jbar + self.functional.j_val(self.u_stored[m,:]));
         # plot figures
         import matplotlib.pyplot as plt;
         plt.plot(time_vec,adjoint_vec);
@@ -226,7 +244,7 @@ class AdjointMarch:
         plt.figure;
         plt.plot(f_dot_adjoint,'*');
         plt.show();
-
+        
         return 0;
 
                 

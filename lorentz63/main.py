@@ -27,6 +27,7 @@ adjoint_march.compute_s_forwardmarch();
 sensitivity_val = adjoint_march.compute_sensitivity();
 print("Sensitivity = ",sensitivity_val);
 adjoint_march.plot_adjoint_solution();
+adjoint_march.compute_lyapunov_exponents();
 
 '''
 def run_time_dependence_convergence():
