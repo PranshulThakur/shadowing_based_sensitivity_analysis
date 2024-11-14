@@ -81,14 +81,14 @@ class AdjointMarch:
     def adjoint_rhs_hom(self,t,nstate,adjoint_n):
         u = self.get_u_at_time_t(t);
         f_u_transposed = self.solver.f_u_transposed(u);
-        dpsi_dt = (f_u_transposed @ adjoint_n);
+        dpsi_dt = -(f_u_transposed @ adjoint_n);
         return dpsi_dt;
     
     def adjoint_rhs_nonhom(self,t,nstate,adjoint_n):
         u = self.get_u_at_time_t(t);
         f_u_transposed = self.solver.f_u_transposed(u);
         j_u = self.functional.j_u(u);
-        dpsi_dt = (f_u_transposed @ adjoint_n) + j_u;
+        dpsi_dt = -(f_u_transposed @ adjoint_n) - j_u;
         return dpsi_dt;
 
     def integrate_adjoint_hom(self,ti,nsteps,Y_ti,i):
@@ -99,7 +99,7 @@ class AdjointMarch:
         self.d[i,:] = 0.5*(Y.T @ self.solver.f_z0(u));
         for j in range(nsteps):
             tj = -j*self.dt + ti;
-            Y =  rk4mat(tj,self.nstate,self.n_subspace_vectors,Y,self.dt,self.adjoint_rhs_hom);
+            Y =  rk4mat_reverse(tj,self.nstate,self.n_subspace_vectors,Y,self.dt,self.adjoint_rhs_hom);
             self.Y_stored[i,(self.nsteps-j-1),:,:] = Y;
             tj_minus = tj-self.dt;
             u = self.get_u_at_time_t(tj_minus);
@@ -120,7 +120,7 @@ class AdjointMarch:
         self.h[i] = 0.5*(np.dot(v, self.solver.f_z0(u)));
         for j in range(nsteps):
             tj = -j*self.dt + ti;
-            v =  rk4vec(tj,self.nstate,v,self.dt,self.adjoint_rhs_nonhom);
+            v =  rk4mat_reverse(tj,self.nstate,1,v,self.dt,self.adjoint_rhs_nonhom);
             self.v_stored[i,nsteps-j-1,:] = v;
             tj_minus = tj-self.dt;
             u = self.get_u_at_time_t(tj_minus);
@@ -146,7 +146,7 @@ class AdjointMarch:
             ti = self.T+self.T_extra - i*self.delT;
             for j in range(self.nsteps):
                 tj = ti - j*self.dt;
-                Q = rk4mat(tj,self.nstate,self.n_subspace_vectors,Q,self.dt,self.adjoint_rhs_hom);
+                Q = rk4mat_reverse(tj,self.nstate,self.n_subspace_vectors,Q,self.dt,self.adjoint_rhs_hom);
 
             Q , R = scipy.linalg.qr(Q,mode='economic');
 

@@ -242,7 +242,7 @@ def rk4vec ( t0, m, u0, dt, f ):
 
   return u
 
-def rk4mat ( t0, m, n, u0, dt, f ):
+def rk4mat_reverse ( ti, m, n, psi_i, dt, g ):
 
 #*****************************************************************************80
 #
@@ -287,33 +287,33 @@ def rk4mat ( t0, m, n, u0, dt, f ):
 #
 #  Get four sample values of the derivative.
 #
-  f0 = f ( t0, m, u0 )
+  g1 = g ( ti, m, psi_i )
 
-  t1 = t0 + dt / 2.0
-  u1 = np.zeros ( (m,n) )
-  u1[0:m,:] = u0[0:m,:] + dt * f0[0:m,:] / 2.0
-  f1 = f ( t1, m, u1 )
+  t2 = ti - dt / 2.0
+  psi2 = np.zeros ( (m,n) )
+  psi2 = psi_i - dt * g1 / 2.0
+  g2 = g ( t2, m, psi2 )
 
-  t2 = t0 + dt / 2.0
-  u2 = np.zeros ( (m,n) )
-  u2[0:m,:] = u0[0:m,:] + dt * f1[0:m,:] / 2.0
-  f2 = f ( t2, m, u2 )
+  t3 = ti - dt / 2.0
+  psi3 = np.zeros ( (m,n) )
+  psi3 = psi_i - dt * g2 / 2.0
+  g3 = g ( t3, m, psi3 )
 
-  t3 = t0 + dt
-  u3 = np.zeros ( (m,n) )
-  u3[0:m,:] = u0[0:m,:] + dt * f2[0:m,:]
-  f3 = f ( t3, m, u3 )
+  t4 = ti - dt
+  psi4 = np.zeros ( (m,n) )
+  psi4 = psi_i - dt * g3
+  g4 = g ( t4, m, psi4 )
 #
 #  Combine them to estimate the solution U at time T1.
 #
-  u = np.zeros ( (m,n) )
-  u[0:m,:] = u0[0:m,:] + ( dt / 6.0 ) * ( \
-            f0[0:m,:] \
-    + 2.0 * f1[0:m,:] \
-    + 2.0 * f2[0:m,:] \
-    +       f3[0:m,:] )
+  psi_iminus = np.zeros ( (m,n) )
+  psi_iminus = psi_i - ( dt / 6.0 ) * ( \
+            g1 \
+    + 2.0 * g2 \
+    + 2.0 * g3 \
+    +       g4 )
 
-  return u
+  return psi_iminus
 
 def rk4vec_test ( ):
 
