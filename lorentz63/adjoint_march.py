@@ -241,10 +241,6 @@ class AdjointMarch:
         plt.plot(self.R[:,0,0],'*');
         plt.show();
         
-        plt.figure;
-        plt.plot(f_dot_adjoint,'*');
-        plt.show();
-        
         return 0;
 
                 
