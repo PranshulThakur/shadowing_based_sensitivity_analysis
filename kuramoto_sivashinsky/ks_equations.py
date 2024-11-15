@@ -9,8 +9,6 @@ class KuramotoSivashinsky:
         self.n_int_grid_points = n_int_grid_points;
         self.L = 128.0;
         self.c = 0.0;
-        self.u_bc = 0.0;
-        self.dubc_dc = 0.0;
         self.dx = self.L/(self.n_int_grid_points + 1.0);
         self.A = np.zeros((n_int_grid_points,n_int_grid_points));
         I_minus_Aa22_dt = np.zeros((n_int_grid_points,n_int_grid_points));
@@ -20,9 +18,7 @@ class KuramotoSivashinsky:
             jaray = np.linspace(i-2,i+2,5,dtype=int);
             for j in jaray:
                 if j>=0 and j<=(self.n_int_grid_points-1):
-                    self.A[i,j] = - self.d2udx2_du(i,j) - self.d4udx4_du(i,j) - self.c*self.g(xi)*self.dudx_du(i,j);
-                    if j==i:
-                        self.A[i,i] -= self.c*self.dg_dx(xi);
+                    self.A[i,j] = - self.d2udx2_du(i,j) - self.d4udx4_du(i,j);
                     I_minus_Aa22_dt[i,j] = -self.A[i,j]*1.0/3.0*self.dt;
                     I_minus_Aa33_dt[i,j] = -self.A[i,j]*1.0/2.0*self.dt;
             
@@ -38,28 +34,6 @@ class KuramotoSivashinsky:
         self.dx = self.L/(self.n_int_grid_points + 1.0);
         self.m_time_steps = round(T_in/self.dt);
 
-    def g(self,x):
-        #g_val = x/self.L * (x-self.L)/self.L;
-        #g_val = g_val**2;
-        #return g_val;
-        return 1.0;
-
-    def dg_dx(self,x):
-        #dgdx_val = 2.0/(self.L**2) * x * (x-self.L) * (2.0*x-self.L);
-        #return dgdx_val;
-        return 0.0;
-
-    def d2g_dx2(self,x):
-        #d2gdx2_val = (x-self.L)*(2.0*x-self.L) + x*(2.0*x-self.L) + 2.0*x*(x-self.L);
-        #d2gdx2_val *= 2.0/(self.L**2);
-        #return d2gdx2_val;
-        return 0.0;
-
-    def d4g_dx4(self,x):
-        #d4gdx4_val = 24.0/(self.L**2);
-        #return d4gdx4_val;
-        return 0.0;
-
     def f_explicit(self,u):
         f_val = np.zeros(len(u));
         u_plus1 = 0.0;
@@ -69,23 +43,23 @@ class KuramotoSivashinsky:
         for i in range(self.n_int_grid_points):
             if i==0: #i=1
                 u_plus1 = u[i+1];
-                u_minus1 = self.u_bc;
+                u_minus1 = 0.0;
                 u_plus2 = u[i+2];
                 u_minus2 = u[i];
             elif i==1:
                 u_plus1 = u[i+1];
                 u_minus1 = u[i-1];
                 u_plus2 = u[i+2];
-                u_minus2 = self.u_bc;
+                u_minus2 = 0.0;
             elif i==(self.n_int_grid_points-1):
-                u_plus1 = self.u_bc;
+                u_plus1 = 0.0;
                 u_minus1 = u[i-1];
                 u_plus2 = u[i];
                 u_minus2 = u[i-2];
             elif i==(self.n_int_grid_points-2):
                 u_plus1 = u[i+1];
                 u_minus1 = u[i-1];
-                u_plus2 = self.u_bc;
+                u_plus2 = 0.0;
                 u_minus2 = u[i-2];
             else:
                 u_plus1 = u[i+1];
@@ -93,10 +67,9 @@ class KuramotoSivashinsky:
                 u_plus2 = u[i+2];
                 u_minus2 = u[i-2];
             
-            xi = (i+1.0)*self.dx; 
             dudx = (u_plus1 - u_minus1)/(2.0*self.dx);
             ududx = (u_plus1**2 - u_minus1**2)/(4.0*self.dx);
-            f_val[i] = -(ududx + self.c*(self.c*self.g(xi))*self.dg_dx(xi) + self.c*self.d2g_dx2(xi) + self.c*self.d4g_dx4(xi));
+            f_val[i] = -(ududx + self.c*dudx);
         
         return f_val;
 
@@ -109,23 +82,23 @@ class KuramotoSivashinsky:
         for i in range(self.n_int_grid_points):
             if i==0: #i=1
                 u_plus1 = u[i+1];
-                u_minus1 = self.u_bc;
+                u_minus1 = 0.0;
                 u_plus2 = u[i+2];
                 u_minus2 = u[i];
             elif i==1:
                 u_plus1 = u[i+1];
                 u_minus1 = u[i-1];
                 u_plus2 = u[i+2];
-                u_minus2 = self.u_bc;
+                u_minus2 = 0.0;
             elif i==(self.n_int_grid_points-1):
-                u_plus1 = self.u_bc;
+                u_plus1 = 0.0;
                 u_minus1 = u[i-1];
                 u_plus2 = u[i];
                 u_minus2 = u[i-2];
             elif i==(self.n_int_grid_points-2):
                 u_plus1 = u[i+1];
                 u_minus1 = u[i-1];
-                u_plus2 = self.u_bc;
+                u_plus2 = 0.0;
                 u_minus2 = u[i-2];
             else:
                 u_plus1 = u[i+1];
@@ -133,12 +106,11 @@ class KuramotoSivashinsky:
                 u_plus2 = u[i+2];
                 u_minus2 = u[i-2];
             
-            xi = (i+1.0)*self.dx; 
             dudx = (u_plus1 - u_minus1)/(2.0*self.dx);
             ududx = (u_plus1**2 - u_minus1**2)/(4.0*self.dx);
             d2udx2 = (u_plus1 - 2.0*u[i] + u_minus1)/(self.dx**2);
             d4udx4 = (u_minus2 - 4.0*u_minus1 + 6.0*u[i] -4.0*u_plus1 + u_plus2)/(self.dx**4);
-            f_val[i] = -(ududx + self.c*self.g(xi)*dudx + d2udx2 + d4udx4 + self.c*(u[i] + self.c*self.g(xi))*self.dg_dx(xi) + self.c*self.d2g_dx2(xi) + self.c*self.d4g_dx4(xi));
+            f_val[i] = -(ududx + self.c*dudx + d2udx2 + d4udx4);
         
         return f_val;
     
@@ -149,9 +121,18 @@ class KuramotoSivashinsky:
             jaray = np.linspace(i-2,i+2,5,dtype=int);
             for j in jaray:
                 if j>=0 and j<=(self.n_int_grid_points-1):
-                    jac[i,j] = -self.ududx_du(i,j,u) - self.c*self.g(xi)*self.dudx_du(i,j) - self.d2udx2_du(i,j) - self.d4udx4_du(i,j);
-
-            jac[i,i] = jac[i,i] - self.c*self.dg_dx(xi);
+                    jac[i,j] = -self.ududx_du(i,j,u) - self.c*self.dudx_du(i,j) - self.d2udx2_du(i,j) - self.d4udx4_du(i,j);
+        
+        return jac;
+    
+    def f_u_transposed(self,u):
+        jac = np.zeros((len(u),len(u)));
+        for i in range(self.n_int_grid_points):
+            xi = (i+1.0)*self.dx; 
+            jaray = np.linspace(i-2,i+2,5,dtype=int);
+            for j in jaray:
+                if j>=0 and j<=(self.n_int_grid_points-1):
+                    jac[j,i] = -self.ududx_du(i,j,u) - self.c*self.dudx_du(i,j) - self.d2udx2_du(i,j) - self.d4udx4_du(i,j);
         
         return jac;
 
@@ -204,32 +185,19 @@ class KuramotoSivashinsky:
         df_dc = np.zeros(len(u));
         u_plus1 = 0.0;
         u_minus1 = 0.0;
-        addterm = 0.0;
         for i in range(self.n_int_grid_points):
             if i==0: #i=1
                 u_plus1 = u[i+1];
-                u_minus1 = self.u_bc;
-                addterm = self.u_bc*self.dubc_dc/(2.0*self.dx) + self.c/(2.0*self.dx) * self.dubc_dc - 1.0/(self.dx**2) * self.dubc_dc + 4.0/(self.dx**4) * self.dubc_dc;
-            elif i==1:
-                u_plus1 = u[i+1];
-                u_minus1 = u[i-1];
-                addterm = -self.dubc_dc*1.0/(self.dx**4);
+                u_minus1 = 0.0;
             elif i==(self.n_int_grid_points-1):
-                u_plus1 = self.u_bc;
+                u_plus1 = 0.0;
                 u_minus1 = u[i-1];
-                addterm = ((-self.u_bc - self.c)/(2.0*self.dx) -1.0/(self.dx**2) + 4.0/(self.dx**4))*self.dubc_dc;
-            elif i==(self.n_int_grid_points-2):
-                u_plus1 = u[i+1];
-                u_minus1 = u[i-1];
-                addterm = -self.dubc_dc*1.0/(self.dx**4);
             else:
                 u_plus1 = u[i+1];
                 u_minus1 = u[i-1];
             
-            xi = (i+1.0)*self.dx; 
-
             dudx = (u_plus1 - u_minus1)/(2.0*self.dx);
-            df_dc[i] = -self.g(xi)*dudx - self.d2g_dx2(xi) - self.d4g_dx4(xi) - (u[i] + self.c*self.g(xi))*self.dg_dx(xi) - self.c*self.g(xi)*self.dg_dx(xi) + addterm;
+            df_dc[i] = -dudx;
          
         return df_dc;
         
