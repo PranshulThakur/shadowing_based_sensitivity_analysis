@@ -276,6 +276,43 @@ def rk4imex(ti,n_int_grid_points,un,dt,f_explicit, A, Aop_invA_13, Aop_invA_12):
     un_plus_1 = un + dt*3.0/4.0*(f2 + g2) - dt*1.0/4.0*(f3+g3) + dt*1.0/2.0*(f4+g4);
     return un_plus_1;
 
+def rk4imex_reverse(ti,n_int_grid_points,n_subspace_vectors,psi_i,dt,g_explicit, transposeop_13, transposeop_12):
+    import numpy as np
+    g2_im = np.zeros((n_int_grid_points,n_subspace_vectors));
+    g3_im = np.zeros((n_int_grid_points,n_subspace_vectors));
+    g4_im = np.zeros((n_int_grid_points,n_subspace_vectors));
+    g1_ex = np.zeros((n_int_grid_points,n_subspace_vectors));
+    g2_ex = np.zeros((n_int_grid_points,n_subspace_vectors));
+    g3_ex = np.zeros((n_int_grid_points,n_subspace_vectors));
+    g4_ex = np.zeros((n_int_grid_points,n_subspace_vectors));
+    psi_k = np.zeros((n_int_grid_points,n_subspace_vectors));
+    psi_i_minus = np.zeros((n_int_grid_points,n_subspace_vectors));
+
+    #k=1
+    g1_ex = g_explicit(ti, psi_i);
+    
+    #k=2
+    psi_k = psi_i - dt/3.0*g1_ex;
+    g2_im = transposeop_13 @ psi_k;
+    psi_k -= dt/3.0*g2_im; 
+    g2_ex = g_explicit(ti - dt/3.0, psi_k);
+    
+    #k=3
+    psi_k = psi_i - dt/2.0*g2_im - dt*g2_ex;
+    g3_im = transposeop_12 @ psi_k;
+    psi_k -= dt/2.0*g3_im; 
+    g3_ex = g_explicit(ti - dt, psi_k);
+    
+    #k=4
+    psi_k = psi_i - dt*(3.0/4.0 * g2_im - 1.0/4.0 * g3_im) - dt*(3.0/4.0 * g2_ex + 1.0/4.0 * g3_ex);
+    g4_im = transposeop_12 @ psi_k;
+    psi_k -= dt/2.0*g4_im; 
+    g4_ex = g_explicit(ti - dt, psi_k);
+
+    psi_i_minus = psi_i -dt*( 3.0/4.0 * (g2_im + g2_ex) - 1.0/4.0 * (g3_im + g3_ex) + 1.0/2.0 * (g4_im + g4_ex)); 
+
+    return psi_i_minus;
+
 
 
 def rk4vec_test ( ):
