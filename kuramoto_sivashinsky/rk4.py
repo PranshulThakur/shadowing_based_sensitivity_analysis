@@ -242,7 +242,7 @@ def rk4vec ( t0, m, u0, dt, f ):
 
   return u
 
-def rk4imex(ti,n_int_grid_points,un,dt,f_explicit, A, Aop_invA_13, Aop_invA_12):
+def rk4imex(ti,n_int_grid_points,un,dt,f_explicit, Aop_invA_13, Aop_invA_12):
     import numpy as np
     g1 = np.zeros(n_int_grid_points);
     g2 = np.zeros(n_int_grid_points);
