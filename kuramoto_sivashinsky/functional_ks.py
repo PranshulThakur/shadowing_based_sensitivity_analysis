@@ -28,11 +28,23 @@ class FunctionalKS:
 
     def compute_j_avg(self,u):
         javg = 0.0;
-        for i in range(self.m_time_steps):
-            javg += self.j_val(u[i]);
+        for i in range(self.m_time_steps+1):
+            factor = 1.0;
+            if (i==0) or (i==self.m_time_steps):
+                factor = 0.5;
+            javg += factor*self.j_val(u[i]);
 
         javg /= self.m_time_steps;
         return javg;
+    
+    def compute_js_avg(self,u):
+        js_avg = 0.0;
+        js_avg = (self.j_s(u[0]) + self.j_s(u[self.m_time_steps]))/2.0;
+        for i in range(1,self.m_time_steps):
+            js_avg += self.j_s(u[i]);
+
+        js_avg /= self.m_time_steps;
+        return js_avg;
 
     def compute_forward_sensitivity(self,u,v,eta):
         sensitivity_val = 0.0;
@@ -48,9 +60,12 @@ class FunctionalKS:
 
     def compute_adjoint_sensitivity(self, adjoint_array, u, solver):
         sensitivity_val = 0.0;
-        for i in range(self.m_time_steps):
+        for i in range(self.m_time_steps+1):
+            factor = 1.0;
+            if (i==0) or (i==self.m_time_steps):
+                factor = 0.5;
             fs = solver.f_c(u[i]);
-            sensitivity_val += 0.5*(np.dot(adjoint_array[i],fs) + np.dot(adjoint_array[i+1],fs)) + self.j_s(u[i]);
+            sensitivity_val += factor*(np.dot(adjoint_array[i],fs) + self.j_s(u[i]));
 
         sensitivity_val /= self.m_time_steps;
         return sensitivity_val;
