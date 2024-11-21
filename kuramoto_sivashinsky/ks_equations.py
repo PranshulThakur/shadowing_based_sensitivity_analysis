@@ -11,22 +11,22 @@ class KuramotoSivashinsky:
         self.c = 0.0;
         self.dx = self.L/(self.n_int_grid_points + 1.0);
         A = np.zeros((n_int_grid_points,n_int_grid_points));
-        I_minus_Aa22_dt = np.zeros((n_int_grid_points,n_int_grid_points));
-        I_minus_Aa33_dt = np.zeros((n_int_grid_points,n_int_grid_points));
+        I_minus_Aa13_dt = np.zeros((n_int_grid_points,n_int_grid_points));
+        I_minus_Aa12_dt = np.zeros((n_int_grid_points,n_int_grid_points));
         for i in range(self.n_int_grid_points):
             xi = (i+1.0)*self.dx; 
             jaray = np.linspace(i-2,i+2,5,dtype=int);
             for j in jaray:
                 if j>=0 and j<=(self.n_int_grid_points-1):
                     A[i,j] = - self.d2udx2_du(i,j) - self.d4udx4_du(i,j);
-                    I_minus_Aa22_dt[i,j] = -self.A[i,j]*1.0/3.0*self.dt;
-                    I_minus_Aa33_dt[i,j] = -self.A[i,j]*1.0/2.0*self.dt;
+                    I_minus_Aa13_dt[i,j] = -A[i,j]*1.0/3.0*self.dt;
+                    I_minus_Aa12_dt[i,j] = -A[i,j]*1.0/2.0*self.dt;
             
-            I_minus_Aa22_dt[i,i] += 1.0;
-            I_minus_Aa33_dt[i,i] += 1.0;
+            I_minus_Aa13_dt[i,i] += 1.0;
+            I_minus_Aa12_dt[i,i] += 1.0;
 
-        self.Aop_invA_13 = sparse.csr_matrix(np.linalg.inv(I_minus_Aa22_dt) @ A); 
-        self.Aop_invA_12 = sparse.csr_matrix(np.linalg.inv(I_minus_Aa33_dt) @ A);
+        self.Aop_invA_13 = sparse.csr_matrix(np.linalg.inv(I_minus_Aa13_dt) @ A); 
+        self.Aop_invA_12 = sparse.csr_matrix(np.linalg.inv(I_minus_Aa12_dt) @ A);
         self.transposeop_13 = -self.Aop_invA_13.transpose().tocsr();
         self.transposeop_12 = -self.Aop_invA_12.transpose().tocsr();
 
@@ -128,17 +128,19 @@ class KuramotoSivashinsky:
         return jac;
 
     def f_u_transposed_adjoint_explicit(self,u,psi,n_subspace_vectors):
-        fu_T_adjoint = np.zeros((self.n_int_grid_points,n_subspace_vectors));
+        if n_subspace_vectors==1:
+            fu_T_adjoint = np.zeros(self.n_int_grid_points);
+        else :
+            fu_T_adjoint = np.zeros((self.n_int_grid_points,n_subspace_vectors));
 
         for i in range(self.n_int_grid_points):
             uterm = (u[i] + self.c)/(2.0*self.dx);
-            for j in range(n_subspace_vectors):
-                if i==0:
-                    fu_T_adjoint[i,j] = psi[i+1,j]*uterm;
-                elif i==(self.n_int_grid_points-1):
-                    fu_T_adjoint[i,j] = -psi[i-1,j]*uterm;
-                else:
-                    fu_T_adjoint[i,j] = (psi[i+1,j] - psi[i-1,j])*uterm;
+            if i==0:
+                fu_T_adjoint[i] = psi[i+1]*uterm;
+            elif i==(self.n_int_grid_points-1):
+                fu_T_adjoint[i] = -psi[i-1]*uterm;
+            else:
+                fu_T_adjoint[i] = (psi[i+1] - psi[i-1])*uterm;
 
         return fu_T_adjoint;
                  
@@ -211,30 +213,14 @@ class KuramotoSivashinsky:
         # Integrate to get u on the attractor.
         T = 1000.0;
         n_pre_steps = round(T/self.dt);
-        for i in range(n_pre_steps-1):
-            ti = i*self.dt + self.dt/2.0;
-            u0 = rk4vec(ti,self.n_int_grid_points,u0,self.dt,self.f);
-
-        u = np.zeros((self.m_time_steps, self.n_int_grid_points)); # u[i] stores u_{i+1/2}
-        u[0,:] = u0;
-        for i in range(self.m_time_steps-1):
-            ti = i*self.dt + self.dt/2.0;
-            u[i+1,:] = rk4vec(ti,self.n_int_grid_points,u[i,:],self.dt,self.f);
-        
-        return u;
-    
-    def compute_trajectory_imex(self,u0):
-        # Integrate to get u on the attractor.
-        T = 1000.0;
-        n_pre_steps = round(T/self.dt);
         for i in range(n_pre_steps):
-            ti = i*self.dt + self.dt/2.0;
+            ti = i*self.dt;
             u0 = rk4imex(ti,self.n_int_grid_points,u0,self.dt,self.f_explicit, self.Aop_invA_13, self.Aop_invA_12);
 
-        u = np.zeros((self.m_time_steps, self.n_int_grid_points)); # u[i] stores u_{i+1/2}
+        u = np.zeros((self.m_time_steps+1, self.n_int_grid_points));
         u[0,:] = u0;
-        for i in range(self.m_time_steps-1):
-            ti = i*self.dt + self.dt/2.0;
+        for i in range(self.m_time_steps):
+            ti = i*self.dt;
             u[i+1,:] = rk4imex(ti,self.n_int_grid_points,u[i,:],self.dt,self.f_explicit, self.Aop_invA_13, self.Aop_invA_12);
         
         return u;

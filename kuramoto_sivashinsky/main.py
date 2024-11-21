@@ -1,8 +1,35 @@
 from ks_equations import *;
 from functional_ks import *;
-from lss_adjoint import *;
+from adjoint_march import *;
 import numpy as np;
 
+T = 100.0;
+T_extra = 20.0;
+T_total = T + T_extra;
+dt = 0.05;
+m = round(T/dt);
+m_total = round(T_total/dt);
+times_stored = np.zeros(m_total+1);
+for i in range(m_total+1):
+    times_stored[i] = i*dt;
+
+n_int_grid_points = 127;
+u0 = np.random.rand(n_int_grid_points);
+#lorentz_solver = Lorentz_63(dt, m_total);
+#functional = FunctionalLorentz(m);
+ks_solver = KuramotoSivashinsky(dt,m_total,n_int_grid_points);
+functional_ks = FunctionalKS(m,n_int_grid_points);
+u_stored = ks_solver.compute_trajectory(u0);
+n_subspace_vectors = 14;
+delT = 5.0;
+adjoint_march = AdjointMarch(ks_solver, functional_ks, u_stored, times_stored,dt, n_subspace_vectors,delT,T,T_extra);
+adjoint_march.compute_QR_matrices();
+adjoint_march.compute_s_forwardmarch();
+sensitivity_val = adjoint_march.compute_sensitivity();
+print("Sensitivity = ",sensitivity_val);
+adjoint_march.compute_lyapunov_exponents();
+
+'''
 def interpolate_trajectory_to_coarse_grid_and_time(u_fine,dt_fine,n_int_grid_points_fine,L,T_final,dt_coarse,n_int_grid_points_coarse):
     u_coarse_grid = interpolate_trajectory_to_coarse_grid(u_fine,dt_fine,T_final,n_int_grid_points_fine,n_int_grid_points_coarse,L);
     u_coarse_grid_and_time = interpolate_trajectory_to_coarse_time(u_coarse_grid, dt_fine, dt_coarse, T_final, n_int_grid_points_coarse);
@@ -130,6 +157,7 @@ for itrajectory in range(1):
     #filenme = "u_ks_511x_1000T__" + str(itrajectory) + ".txt"; 
     #np.savetxt(filename,u);
 '''
+'''
 functional_ks = FunctionalKS(m_time_steps,n_int_grid_points);
 lss_adjoint = LSSadjoint(ks_solver, functional_ks);
 adjoint_bc = np.zeros(n_int_grid_points);
@@ -138,3 +166,4 @@ sensitivity_val = functional_ks.compute_adjoint_sensitivity(adjoint,u,ks_solver)
 print("Sensitivity = ",sensitivity_val);
 '''
 #ks_solver.plot_trajectory(u);
+

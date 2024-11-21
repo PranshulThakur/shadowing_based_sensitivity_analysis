@@ -78,15 +78,15 @@ class AdjointMarch:
 
         return u;
 
-    def adjoint_rhs_hom_explicit(self,t,nstate,adjoint_n):
+    def adjoint_rhs_hom_explicit(self,t,adjoint_n):
         u = self.get_u_at_time_t(t);
         dpsi_dt = -self.solver.f_u_transposed_adjoint_explicit(u,adjoint_n,self.n_subspace_vectors);
         return dpsi_dt;
     
-    def adjoint_rhs_nonhom_explicit(self,t,nstate,adjoint_n):
+    def adjoint_rhs_nonhom_explicit(self,t,adjoint_n):
         u = self.get_u_at_time_t(t);
         j_u = self.functional.j_u(u);
-        dpsi_dt = -self.solver.f_u_transposed_adjoint_explicit(u,adjoint_n,self.n_subspace_vectors) - j_u;
+        dpsi_dt = -self.solver.f_u_transposed_adjoint_explicit(u,adjoint_n,1) - j_u;
         return dpsi_dt;
 
     def integrate_adjoint_hom(self,ti,nsteps,Y_ti,i):
