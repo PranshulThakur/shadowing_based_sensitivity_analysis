@@ -27,8 +27,8 @@ class AdjointMarch:
         self.jbar = self.functional.compute_j_avg(self.u_stored[0:self.m+1,:]);
         self.s0_initial = np.zeros(self.n_subspace_vectors);
         # To plot adjoint solution
-        #self.Y_stored = np.zeros( (self.K,(self.nsteps+1),self.nstate,self.n_subspace_vectors));
-        #self.v_stored = np.zeros( (self.K,(self.nsteps+1),self.nstate));
+        self.Y_stored = np.zeros( (self.K,(self.nsteps+1),self.nstate,self.n_subspace_vectors));
+        self.v_stored = np.zeros( (self.K,(self.nsteps+1),self.nstate));
 
     def compute_s0_initial(self,Q,v):
         u = self.get_u_at_time_t(0.0);
@@ -92,13 +92,13 @@ class AdjointMarch:
     def integrate_adjoint_hom(self,ti,nsteps,Y_ti,i):
         Y = np.zeros((self.nstate,self.n_subspace_vectors));
         Y = Y_ti;
-        #self.Y_stored[i,self.nsteps,:,:] = Y;
+        self.Y_stored[i,self.nsteps,:,:] = Y;
         u = self.get_u_at_time_t(ti);
         self.d[i,:] = 0.5*(Y.T @ self.solver.f_c(u));
         for j in range(nsteps):
             tj = -j*self.dt + ti;
             Y = rk4imex_reverse(tj,self.nstate,self.n_subspace_vectors,Y,self.dt,self.adjoint_rhs_hom_explicit, self.solver.transposeop_13, self.solver.transposeop_12);
-            #self.Y_stored[i,(self.nsteps-j-1),:,:] = Y;
+            self.Y_stored[i,(self.nsteps-j-1),:,:] = Y;
             tj_minus = tj-self.dt;
             u = self.get_u_at_time_t(tj_minus);
             if j==(nsteps-1):
@@ -113,13 +113,13 @@ class AdjointMarch:
     def integrate_adjoint_nonhom(self,ti,nsteps,v_ti,i):
         v = np.zeros(self.nstate);
         v = v_ti;
-        #self.v_stored[i,nsteps,:] = v;
+        self.v_stored[i,nsteps,:] = v;
         u = self.get_u_at_time_t(ti);
         self.h[i] = 0.5*(np.dot(v, self.solver.f_c(u)));
         for j in range(nsteps):
             tj = -j*self.dt + ti;
             v = rk4imex_reverse(tj,self.nstate,1,v,self.dt,self.adjoint_rhs_nonhom_explicit, self.solver.transposeop_13, self.solver.transposeop_12);
-            #self.v_stored[i,nsteps-j-1,:] = v;
+            self.v_stored[i,nsteps-j-1,:] = v;
             tj_minus = tj-self.dt;
             u = self.get_u_at_time_t(tj_minus);
             if j==(nsteps-1):
@@ -180,8 +180,10 @@ class AdjointMarch:
     def compute_lyapunov_exponents(self):
         lyapunov_exp = np.zeros(self.n_subspace_vectors);
         lyapunov_exp_stored = np.zeros( (self.K,self.n_subspace_vectors));
+        times_stored = np.zeros(self.K);
         for i in range(self.K):
             ival = self.K-i-1;
+            times_stored[ival] = self.delT*ival; 
             for j in range(self.n_subspace_vectors):
                 lyapunov_exp[j] += np.log(np.abs(self.R[ival,j,j]));
                 lyapunov_exp_stored[ival,j] = lyapunov_exp[j]/( (i+1.0)*self.delT);
@@ -190,10 +192,13 @@ class AdjointMarch:
 
         print(lyapunov_exp);
         import matplotlib.pyplot as plt;
-        plt.plot(lyapunov_exp_stored);
+        plt.plot(times_stored,lyapunov_exp_stored);
+        plt.xlabel("t");
+        plt.ylabel("Lyapunov exponents");
+        plt.savefig('lyapunov_exponents.eps', format='eps');
         plt.show();
         return 0;
-'''        
+        
     def plot_adjoint_solution(self):
         m = round(self.T/self.dt);
         adjoint_vec = np.zeros((m+1,self.nstate));
@@ -231,16 +236,25 @@ class AdjointMarch:
         print("f_dot_adjoint initial = ", f_dot_adjoint[0] - self.jbar + self.functional.j_val(self.u_stored[0,:]) );
         print("f_dot_adjoint final = ",f_dot_adjoint[m] - self.jbar + self.functional.j_val(self.u_stored[m,:]));
         # plot figures
+        x_vals = np.zeros(self.solver.n_int_grid_points);
+        for i in range(self.solver.n_int_grid_points):
+            x_vals[i] = self.solver.dx*(i+1.0);
+
         import matplotlib.pyplot as plt;
-        plt.plot(time_vec,adjoint_vec);
-        plt.show();
-        
-        plt.figure;
-        plt.plot(self.R[:,0,0],'*');
+        x_array, times_array = np.meshgrid(x_vals,time_vec);
+        plt.figure();
+        #contourplot = plt.contourf(x_array, times_array, adjoint_vec, 50,cmap='jet');
+        contourplot = plt.contourf(x_array, times_array, adjoint_vec, levels=50,cmap='terrain');
+        cbar = plt.colorbar(contourplot);
+        plt.axis('equal');
+        plt.axis('scaled');
+        plt.xlabel("x");
+        plt.ylabel("t");
+        plt.savefig('adjoint_ks.png', format='png');
         plt.show();
         
         return 0;
-'''
+
                 
 
 

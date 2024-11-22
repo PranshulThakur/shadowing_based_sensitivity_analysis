@@ -227,9 +227,9 @@ class KuramotoSivashinsky:
 
     def plot_trajectory(self,u):
         # Get times
-        times = np.zeros(self.m_time_steps);
-        for i in range(self.m_time_steps):
-            times[i] = i*self.dt + self.dt/2.0;
+        times = np.zeros(self.m_time_steps+1);
+        for i in range(self.m_time_steps+1):
+            times[i] = i*self.dt;
 
         x_vals = np.zeros(self.n_int_grid_points);
         for i in range(self.n_int_grid_points):
@@ -244,7 +244,7 @@ class KuramotoSivashinsky:
         plt.axis('scaled');
         plt.xlabel("x");
         plt.ylabel("t");
-        plt.title ( 'KS solution' );
+        plt.savefig('primal_soln_ks.png', format='png');
         plt.show();
         return;
 

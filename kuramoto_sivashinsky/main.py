@@ -3,7 +3,7 @@ from functional_ks import *;
 from adjoint_march import *;
 import numpy as np;
 
-T = 100.0;
+T = 200.0;
 T_extra = 20.0;
 T_total = T + T_extra;
 dt = 0.05;
@@ -20,14 +20,16 @@ u0 = np.random.rand(n_int_grid_points);
 ks_solver = KuramotoSivashinsky(dt,m_total,n_int_grid_points);
 functional_ks = FunctionalKS(m,n_int_grid_points);
 u_stored = ks_solver.compute_trajectory(u0);
-n_subspace_vectors = 14;
+ks_solver.plot_trajectory(u_stored);
+n_subspace_vectors = 20;
 delT = 5.0;
 adjoint_march = AdjointMarch(ks_solver, functional_ks, u_stored, times_stored,dt, n_subspace_vectors,delT,T,T_extra);
 adjoint_march.compute_QR_matrices();
-adjoint_march.compute_s_forwardmarch();
-sensitivity_val = adjoint_march.compute_sensitivity();
-print("Sensitivity = ",sensitivity_val);
+#adjoint_march.compute_s_forwardmarch();
+#sensitivity_val = adjoint_march.compute_sensitivity();
+#print("Sensitivity = ",sensitivity_val);
 adjoint_march.compute_lyapunov_exponents();
+#adjoint_march.plot_adjoint_solution();
 
 '''
 def interpolate_trajectory_to_coarse_grid_and_time(u_fine,dt_fine,n_int_grid_points_fine,L,T_final,dt_coarse,n_int_grid_points_coarse):
