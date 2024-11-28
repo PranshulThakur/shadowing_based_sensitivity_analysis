@@ -3,8 +3,105 @@ from adjoint_march import *
 from functional_lorentz import *
 import numpy as np;
 import time;
+import sys;
+import matplotlib.pyplot as plt;
 
+def check_equality(num1, num2):
+    if (np.abs(num1-num2) > 1.0e-12):
+        sys.exit("num1 is not equal to num2. Equality check has failed. Aborting...");
+    
+    return 0;
+    
 
+def compute_adjoint_sensitivity(T, dt, s): 
+    delT = 0.2;
+    check_equality(T/delT, round(T/delT));
+    T_extra = 20.0;
+    check_equality(T_extra/delT, round(T_extra/delT));
+    T_total = T + T_extra;
+    m = round(T/dt);
+    check_equality(m,T/dt);
+    m_total = round(T_total/dt);
+    check_equality(T_total/dt,m_total);
+    times_stored = np.zeros(m_total+1);
+    for i in range(m_total+1):
+        times_stored[i] = i*dt;
+            
+    u0 = np.random.rand(3);
+    lorentz_solver = Lorentz_63(dt, m_total, s);
+    functional = FunctionalLorentz(m);
+    u_stored = lorentz_solver.compute_trajectory(u0);
+    n_subspace_vectors = 1;
+    adjoint_march = AdjointMarch(lorentz_solver, functional, u_stored, times_stored,dt, n_subspace_vectors,delT,T,T_extra);
+    adjoint_march.compute_QR_matrices();
+    adjoint_march.compute_s_forwardmarch();
+    sensitivity_val = adjoint_march.compute_sensitivity();
+    return sensitivity_val;
+
+def djbar_ds_vs_T():
+    n_runs = 10; #10
+    n_times = 8;
+    T_final = 500.0; #500.0
+    T_array = np.zeros(n_times);
+    sensitivity_array = np.zeros( (n_times, n_runs));
+    dt = 0.01;
+    
+    c_factor = pow(T_final,1.0/(n_times-1.0));
+    for i in range(n_times):
+        Ti = pow(c_factor,i);
+        T_array[i] = round(Ti/0.2)*0.2;
+
+    s = 0.0;
+    print(T_array);
+    for i in range(n_times):
+        for j in range(n_runs):
+            sensitivity_array[i,j] = compute_adjoint_sensitivity(T_array[i],dt,s);
+    '''
+    # plot sensitivity array
+    plt.figure();
+    for j in range(n_runs):
+        plt.semilogx(T_array, sensitivity_array[:,j],'*',color='blue');
+    
+    plt.xlabel('T');
+    plt.ylabel(r"$d\bar{j}/ds$");
+    plt.show();
+    '''
+    np.savetxt('T_array_djbar_ds_vs_T_runs.txt', T_array);
+    np.savetxt('sensitivity_array_djbar_ds_vs_T_runs.txt', sensitivity_array);
+    return 0;
+
+def djbar_ds_vs_s():
+    n_runs = 10; #10
+    n_s = 50; #50
+    T = 50.0; #500.0
+    s_array = np.zeros(n_s);
+    sensitivity_array = np.zeros( (n_s, n_runs));
+    dt = 0.01;
+    
+    for i in range(n_s):
+        s_array[i] = i*30.0/(n_s-1.0);
+
+    for i in range(n_s):
+        for j in range(n_runs):
+            sensitivity_array[i,j] = compute_adjoint_sensitivity(T,dt,s_array[i]);
+    '''
+    # plot sensitivity array
+    plt.figure();
+    for j in range(n_runs):
+        plt.plot(s_array, sensitivity_array[:,j],'*',color='blue');
+    
+    plt.xlabel('s');
+    plt.ylabel(r"$d\bar{j}/ds$");
+    plt.show();
+    '''
+    np.savetxt('s_array_djbar_ds_vs_s_runs.txt', s_array);
+    np.savetxt('sensitivity_array_djbar_ds_vs_s_runs.txt', sensitivity_array);
+    return 0;
+
+        
+djbar_ds_vs_T();
+djbar_ds_vs_s();
+'''
 T = 100.0;
 T_extra = 20.0;
 T_total = T + T_extra;
@@ -28,199 +125,4 @@ sensitivity_val = adjoint_march.compute_sensitivity();
 print("Sensitivity = ",sensitivity_val);
 adjoint_march.plot_adjoint_solution();
 adjoint_march.compute_lyapunov_exponents();
-
 '''
-def run_time_dependence_convergence():
-    dt = 0.015;
-    T_final = 1000.0;
-    n_times = 500;
-    # Compute T_array
-    T_array = np.zeros(n_times);
-    Tlog10 = np.log10(T_final);
-    for i in range(n_times):
-       exponent = i*Tlog10/(n_times-1.0);
-       T_array[i] = round((10.0**exponent)/dt) * dt;
-    
-    sensitivity_vals = np.zeros(n_times);
-    sensitivity_errs = np.zeros(n_times);
-    sensitivity_convergence_ref1 = np.zeros(n_times);
-    sensitivity_convergence_ref2 = np.zeros(n_times);
-    C1 = 0.04;
-    C2 = 0.7;
-    n_avgs = 20;
-    adjoint_bc = (1.0/4.0)*np.ones(3);
-    for i in range(n_times):
-        m_steps = round(T_array[i]/dt);
-        lorentz_solver = Lorentz_63(dt, m_steps);
-        functional = FunctionalLorentz(m_steps);
-        lss_adjoint =  LSSadjoint(lorentz_solver,functional);
-        sensitivity_avg = 0.0;
-        for j in range(n_avgs):
-            u0 = np.random.rand(3);
-            u = lorentz_solver.compute_trajectory(u0);
-            adjoint_array = lss_adjoint.compute_adjoint_solution(u,adjoint_bc);
-            sensitivity_avg += functional.compute_adjoint_sensitivity(adjoint_array,u,lorentz_solver);
-
-        sensitivity_avg /= n_avgs;
-        sensitivity_vals[i] = sensitivity_avg;
-        sensitivity_errs[i] = np.fabs(sensitivity_vals[i] - 1.0);
-        sensitivity_convergence_ref1[i] = C1/np.sqrt(T_array[i]);
-        sensitivity_convergence_ref2[i] = C2/T_array[i];
-
-    np.savetxt("times.txt",T_array);
-    np.savetxt("sensitivity_errors.txt",sensitivity_errs);
-    #np.loadtxt("filename");
-
-    from matplotlib import pyplot as plt;
-    plt.loglog(T_array, sensitivity_errs,'*', label="Error in sensitivity");
-    plt.loglog(T_array, sensitivity_convergence_ref1,'--', label="O(1/sqrt(T))");
-    plt.loglog(T_array, sensitivity_convergence_ref2,'--', label="O(1/T)");
-    plt.title("Error in sensitivity vs T.");
-    plt.xlabel("Integration length T");
-    plt.ylabel("Error in sensitivity");
-    plt.legend();
-    plt.show();
-
-
-def get_u_interpolated(u,dt_fine,T_final,dt_coarse):
-    m_steps_fine = round(T_final/dt_fine);
-    m_steps_coarse = round(T_final/dt_coarse);
-    t_fine = np.zeros(m_steps_fine);
-    t_coarse = np.zeros(m_steps_coarse);
-    for i in range(m_steps_fine):
-        t_fine[i] = i*dt_fine + dt_fine/2.0;
-
-    for i in range(m_steps_coarse):
-        t_coarse[i] = i*dt_coarse + dt_coarse/2.0;
-    nstate = 3;
-    u_coarse = np.zeros((m_steps_coarse,nstate));
-    for j in range(nstate):
-        u_coarse[:,j] = np.interp(t_coarse, t_fine, u[:,j]);
-    
-    return u_coarse;
-
-
-
-def run_grid_convergence():
-    dt_fine = 0.0005;
-    T_final = 400.0;
-    m_steps_fine = round(T_final/dt_fine);
-    lorentz_solver = Lorentz_63(dt_fine, m_steps_fine);
-    n_random_trajectories = 10;
-    n_grids = 8;
-    h_array = np.zeros(n_grids);
-    sensitivity_avg_second_order = np.zeros(n_grids);
-    sensitivity_avg_first_order = np.zeros(n_grids);
-    for i in range(n_grids):
-        h_array[i] = 1.0/(2.0**i);
-
-    for ranindex in range(n_random_trajectories):
-        u0 = np.random.rand(3);
-        u = lorentz_solver.compute_trajectory(u0);
-        for i in range(n_grids):
-            dt_coarse = h_array[i];
-            u_interpolated = get_u_interpolated(u,dt_fine,T_final,dt_coarse);
-            m_steps_coarse = round(T_final/dt_coarse);
-            functional = FunctionalLorentz(m_steps_coarse);
-            lss_adjoint =  LSSadjoint(lorentz_solver,functional);
-            adjoint_bc = np.zeros(3);
-            adjoint_array_second_order = lss_adjoint.compute_adjoint_solution(u_interpolated,adjoint_bc,m_steps_coarse,dt_coarse);
-            sensitivity_avg_second_order[i] += functional.compute_adjoint_sensitivity(adjoint_array_second_order,u_interpolated,lorentz_solver);
-            adjoint_array_first_order = lss_adjoint.compute_adjoint_solution_first_order(u_interpolated,adjoint_bc,m_steps_coarse,dt_coarse);
-            sensitivity_avg_first_order[i] += functional.compute_adjoint_sensitivity(adjoint_array_first_order,u_interpolated,lorentz_solver);
-
-    sensitivity_avg_second_order /= n_random_trajectories;
-    sensitivity_avg_first_order /= n_random_trajectories;
-    print("dt = ",h_array);
-    print("sensitivities_second_order=",sensitivity_avg_second_order);
-    print("sensitivities_first_order=",sensitivity_avg_first_order);
-    sensitivity_errs_second_order = np.fabs(sensitivity_avg_second_order - 1.0);
-    sensitivity_errs_first_order = np.fabs(sensitivity_avg_first_order - 1.0);
-    C2 = 4.0;
-    C1 = 8.0;
-    expected_errs_second_order = C2*(h_array**2);
-    expected_errs_first_order = C1*(h_array**1);
-    np.savetxt("h_array.txt",h_array);
-    np.savetxt("sensitivity_errs_second_order.txt",sensitivity_errs_second_order);
-    np.savetxt("sensitivity_errs_first_order.txt",sensitivity_errs_first_order);
-    from matplotlib import pyplot as plt;
-    plt.loglog(h_array, sensitivity_errs_second_order,'-*', label="From second order adjoint");
-    plt.loglog(h_array, expected_errs_second_order,'--', label="O(h^2)");
-    plt.loglog(h_array, sensitivity_errs_first_order,'-*', label="From first order adjoint");
-    plt.loglog(h_array, expected_errs_first_order,'--', label="O(h)");
-    plt.title("Error in sensitivity vs dt using coarse adjoint method.");
-    plt.xlabel("Grid size dt");
-    plt.ylabel("Error in sensitivity");
-    plt.legend();
-    plt.show();
-
-
-def run_eigenvalue_convergence():
-    dt = 0.02;
-    T_final = 50000.0; # With alpha_squared=1.0;
-    n_times = 1000;
-    # Compute T_array
-    T_array = np.zeros(n_times);
-    Tlog10 = np.log10(T_final);
-    for i in range(n_times):
-       exponent = i*Tlog10/(n_times-1.0);
-       T_array[i] = round((10.0**exponent)/dt) * dt;
-    
-    conditioning_vals = np.zeros(n_times);
-    C1 = 0.04;
-    C2 = 0.7;
-    n_avgs = 1;
-    adjoint_bc = np.zeros(3);
-    for i in range(n_times):
-        m_steps = round(T_array[i]/dt);
-        lorentz_solver = Lorentz_63(dt, m_steps);
-        functional = FunctionalLorentz(m_steps);
-        lss_adjoint =  LSSadjoint(lorentz_solver,functional);
-        conditioning_avg = 0.0;
-        for j in range(n_avgs):
-            u0 = np.random.rand(3);
-            u = lorentz_solver.compute_trajectory(u0);
-            conditioning_avg += lss_adjoint.compute_adjoint_solution(u,adjoint_bc, compute_condition_number=True);
-
-        conditioning_avg /= n_avgs;
-        conditioning_vals[i] = conditioning_avg;
-
-    np.savetxt("times_conditioning.txt",T_array);
-    np.savetxt("conditioning_vals.txt",conditioning_vals);
-    #np.loadtxt("filename");
-
-    from matplotlib import pyplot as plt;
-    plt.loglog(T_array, conditioning_vals,'*', label="Conditioning constant");
-    plt.title("Condition number vs T.");
-    plt.xlabel("Integration length T");
-    plt.ylabel("Condition number");
-    plt.show();
-
-def check_one_run_time():
-    start_time = time.time();
-    dt = 0.01;
-    T = 1500.0;
-    adjoint_bc = 1.0*np.ones(3);
-    m_steps = round(T/dt);
-    lorentz_solver = Lorentz_63(dt, m_steps);
-    functional = FunctionalLorentz(m_steps);
-    lss_adjoint =  LSSadjoint(lorentz_solver,functional);
-    u0 = np.random.rand(3);
-    u = lorentz_solver.compute_trajectory(u0);
-    lss_adjoint.compute_adjoint_solution(u,adjoint_bc, compute_condition_number=True);
-    #lss_adjoint.compute_adjoint_solution(u,adjoint_bc);
-    elapsed_time = time.time() - start_time;
-    print("--- %s seconds ---" % (elapsed_time));
-    return elapsed_time;
-
-def required_computecanada_time(elapsed_time_ref):
-    n_avg = 1;
-    n_times = 500;
-    required_time = elapsed_time_ref*n_avg*n_times/3600.0;
-    print("Requires ",required_time," hours of compute time.");
-
-
-#required_computecanada_time(check_one_run_time());
-run_eigenvalue_convergence();
-'''
-    

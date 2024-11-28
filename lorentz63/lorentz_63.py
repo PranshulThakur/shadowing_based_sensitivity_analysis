@@ -2,13 +2,13 @@ import numpy as np
 from rk4 import rk4vec
 
 class Lorentz_63:
-    def __init__(self, dt, m_steps):
+    def __init__(self, dt, m_steps, z0):
         self.dt = dt;
         self.m_steps = m_steps;
         self.sigma = 10.0;
         self.beta = 8.0/3.0;
         self.rho = 25.0;
-        self.z0 = 0.0;
+        self.z0 = z0;
     
     def f(self,t,m,u):
         f_val = np.zeros(len(u));
