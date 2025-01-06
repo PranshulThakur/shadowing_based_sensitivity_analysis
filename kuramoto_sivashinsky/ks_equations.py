@@ -14,7 +14,6 @@ class KuramotoSivashinsky:
         I_minus_Aa13_dt = np.zeros((n_int_grid_points,n_int_grid_points));
         I_minus_Aa12_dt = np.zeros((n_int_grid_points,n_int_grid_points));
         for i in range(self.n_int_grid_points):
-            xi = (i+1.0)*self.dx; 
             jaray = np.linspace(i-2,i+2,5,dtype=int);
             for j in jaray:
                 if j>=0 and j<=(self.n_int_grid_points-1):
@@ -27,8 +26,8 @@ class KuramotoSivashinsky:
 
         self.Aop_invA_13 = sparse.csr_matrix(np.linalg.inv(I_minus_Aa13_dt) @ A); 
         self.Aop_invA_12 = sparse.csr_matrix(np.linalg.inv(I_minus_Aa12_dt) @ A);
-        self.transposeop_13 = -self.Aop_invA_13.transpose().tocsr();
-        self.transposeop_12 = -self.Aop_invA_12.transpose().tocsr();
+        self.transposeop_13 = -1.0*self.Aop_invA_13.transpose().tocsr();
+        self.transposeop_12 = -1.0*self.Aop_invA_12.transpose().tocsr();
 
     def update_spacetime_grid(self, n_int_grid_points_in, dt_in, T_in):
         self.dt = dt_in;
@@ -119,7 +118,6 @@ class KuramotoSivashinsky:
     def f_u(self,u):
         jac = np.zeros((len(u),len(u)));
         for i in range(self.n_int_grid_points):
-            xi = (i+1.0)*self.dx; 
             jaray = np.linspace(i-2,i+2,5,dtype=int);
             for j in jaray:
                 if j>=0 and j<=(self.n_int_grid_points-1):

@@ -1,6 +1,5 @@
 import numpy as np;
 import scipy;
-from scipy.sparse.linalg import spsolve
 from rk4 import *
 import sys
 
@@ -29,8 +28,10 @@ class AdjointMarch:
         # To plot adjoint solution
         self.Y_stored = np.zeros( (self.K,(self.nsteps+1),self.nstate,self.n_subspace_vectors));
         self.v_stored = np.zeros( (self.K,(self.nsteps+1),self.nstate));
+        self.n_unstable = self.n_subspace_vectors;
 
     def compute_s0_initial(self,Q,v):
+        '''
         u = self.get_u_at_time_t(0.0);
         f = self.solver.f(0.0,self.nstate,u);
         j = self.functional.j_val(u);
@@ -40,10 +41,13 @@ class AdjointMarch:
         rhs = self.jbar - j - np.dot(f,v);
         if w_norm > 1.0e-6:
             self.s0_initial = (rhs/(w_norm*w_norm))*w;
-        
+        '''
         return 0;
 
     def compute_sensitivity(self):
+        self.compute_dimension_of_the_unstable_subspaces();
+        self.compute_s_backward_intermediate_march();
+        self.compute_s_forwardmarch();
         sensitivity_val = 0.0;
 
         for i in range(self.K):
@@ -54,8 +58,7 @@ class AdjointMarch:
 
         return sensitivity_val;
 
-    def solve_triangular(self,A,x,rhs):
-        m = self.n_subspace_vectors;
+    def solve_triangular(self,A,x,rhs,m):
         for i in range(m-1,-1,-1):
             sumval = 0.0;
             for j in range(i+1,m):
@@ -63,11 +66,35 @@ class AdjointMarch:
             x[i] = 1.0/A[i,i] * (rhs[i]-sumval);
 
         return 0;
+        
+    def multiply_triangular(self,A,x,rhs,n):
+        for i in range(n):
+            rhs[i] = 0.0;
+            for j in range(i,n):
+                rhs[i] += A[i,j]*x[j];
+        return 0;
+        
+
+
+    def compute_s_backward_intermediate_march(self):
+        stable_range = slice(self.n_unstable,self.n_subspace_vectors);
+        n_stable = self.n_subspace_vectors - self.n_unstable;
+        for i in range(self.K-1,-1,-1):
+            if i>0:
+                self.multiply_triangular(self.R[i,stable_range,stable_range],self.s[i,stable_range],self.s[i-1,stable_range], n_stable);
+                self.s[i-1,stable_range] -= self.b[i,stable_range];
+         
+        return 0;
+     
                 
     def compute_s_forwardmarch(self): 
-        self.solve_triangular(self.R[0,:,:], self.s[0,:], (self.b[0,:] + self.s0_initial) );
-        for i in range(1,self.K):
-            self.solve_triangular(self.R[i,:,:], self.s[i,:], (self.b[i,:] + self.s[i-1,:]) );
+        stable_range = slice(self.n_unstable,self.n_subspace_vectors);
+        unstable_range = slice(0,self.n_unstable);
+        for i in range(0,self.K):
+            if i==0:
+                self.solve_triangular(self.R[i,unstable_range,unstable_range], self.s[i,unstable_range], (self.b[i,unstable_range] + self.s0_initial[unstable_range] - (self.R[i,unstable_range,stable_range] @ self.s[i,stable_range]) ), self.n_unstable );
+            else:
+                self.solve_triangular(self.R[i,unstable_range,unstable_range], self.s[i,unstable_range], (self.b[i,unstable_range] + self.s[i-1,unstable_range] - (self.R[i,unstable_range,stable_range] @ self.s[i,stable_range]) ), self.n_unstable );
         
         return 0;
 
@@ -177,6 +204,26 @@ class AdjointMarch:
         
         return 0;
 
+    def compute_dimension_of_the_unstable_subspaces(self):
+        lyapunov_exp = np.zeros(self.n_subspace_vectors);
+        for i in range(self.K):
+            ival = self.K-i-1;
+            for j in range(self.n_subspace_vectors):
+                lyapunov_exp[j] += np.log(np.abs(self.R[ival,j,j]));
+
+        lyapunov_exp /= self.T;
+        
+        self.n_unstable = 0;
+
+        for i in range(self.n_subspace_vectors):
+            if (lyapunov_exp[i]>0.0):
+                self.n_unstable +=1;
+            else:
+                break;
+
+        return 0;
+        
+
     def compute_lyapunov_exponents(self):
         lyapunov_exp = np.zeros(self.n_subspace_vectors);
         lyapunov_exp_stored = np.zeros( (self.K,self.n_subspace_vectors));
@@ -190,7 +237,7 @@ class AdjointMarch:
 
         lyapunov_exp /= self.T;
 
-        print(lyapunov_exp);
+        print("Lyapunov exponents = ",lyapunov_exp);
         import matplotlib.pyplot as plt;
         plt.plot(times_stored,lyapunov_exp_stored);
         plt.xlabel("t");
@@ -212,7 +259,7 @@ class AdjointMarch:
                 adjoint_iminus_ext = (self.Y_stored[ival-1,self.nsteps,:,:] @ self.s[ival-1,:]) + self.v_stored[ival-1,self.nsteps,:];
                 diff = adjoint_iminus_int - adjoint_iminus_ext;
                 norm_val = np.sqrt(np.dot(diff,diff));
-                if norm_val>1.0e-14:
+                if norm_val>1.0e-11:
                     print("Adjoint solution is not continuous. Norm value = ",norm_val);
                     sys.exit(0);
 

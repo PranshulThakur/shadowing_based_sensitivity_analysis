@@ -15,17 +15,15 @@ for i in range(m_total+1):
 
 n_int_grid_points = 127; #127, 255, 511
 u0 = np.random.rand(n_int_grid_points);
-#lorentz_solver = Lorentz_63(dt, m_total);
-#functional = FunctionalLorentz(m);
 ks_solver = KuramotoSivashinsky(dt,m_total,n_int_grid_points);
 functional_ks = FunctionalKS(m,n_int_grid_points);
 u_stored = ks_solver.compute_trajectory(u0);
 ks_solver.plot_trajectory(u_stored);
-n_subspace_vectors = 15;
+n_subspace_vectors = 20;
 delT = 5.0;
 adjoint_march = AdjointMarch(ks_solver, functional_ks, u_stored, times_stored,dt, n_subspace_vectors,delT,T,T_extra);
 adjoint_march.compute_QR_matrices();
-adjoint_march.compute_s_forwardmarch();
+#adjoint_march.compute_s_forwardmarch();
 sensitivity_val = adjoint_march.compute_sensitivity();
 print("Sensitivity = ",sensitivity_val);
 adjoint_march.compute_lyapunov_exponents();
