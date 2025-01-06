@@ -38,6 +38,31 @@ def compute_adjoint_sensitivity(T, dt, s):
     sensitivity_val = adjoint_march.compute_sensitivity();
     return sensitivity_val;
 
+def plot_lyapunov_exponents(T, dt, s):
+    delT = 0.2;
+    check_equality(T/delT, round(T/delT));
+    T_extra = 20.0;
+    check_equality(T_extra/delT, round(T_extra/delT));
+    T_total = T + T_extra;
+    m = round(T/dt);
+    check_equality(m,T/dt);
+    m_total = round(T_total/dt);
+    check_equality(T_total/dt,m_total);
+    times_stored = np.zeros(m_total+1);
+    for i in range(m_total+1):
+        times_stored[i] = i*dt;
+            
+    u0 = np.random.rand(3);
+    lorentz_solver = Lorentz_63(dt, m_total, s);
+    functional = FunctionalLorentz(m);
+    u_stored = lorentz_solver.compute_trajectory(u0);
+    n_subspace_vectors = 3;
+    adjoint_march = AdjointMarch(lorentz_solver, functional, u_stored, times_stored,dt, n_subspace_vectors,delT,T,T_extra);
+    adjoint_march.compute_QR_matrices();
+    adjoint_march.compute_lyapunov_exponents();
+    return 0;
+    
+
 def djbar_ds_vs_T():
     n_runs = 10; #10
     n_times = 8;
@@ -99,8 +124,9 @@ def djbar_ds_vs_s():
     return 0;
 
         
-djbar_ds_vs_T();
-djbar_ds_vs_s();
+#djbar_ds_vs_T();
+#djbar_ds_vs_s();
+plot_lyapunov_exponents(100.0,0.01,0.0);
 '''
 T = 100.0;
 T_extra = 20.0;
