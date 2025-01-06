@@ -193,6 +193,9 @@ class AdjointMarch:
         print(lyapunov_exp);
         import matplotlib.pyplot as plt;
         plt.plot(lyapunov_exp_stored);
+        plt.ylabel("Lyapunov exponents");
+        plt.xlabel("Time");
+        plt.savefig("lyapunov_exponents_lorentz.eps",format="eps");
         plt.show();
         return 0;
         
