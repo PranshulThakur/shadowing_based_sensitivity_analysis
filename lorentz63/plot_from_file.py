@@ -1,7 +1,7 @@
 from matplotlib import pyplot as plt
 import numpy as np
 
-
+'''
 filename_sensitivity = "sensitivity_errors.txt";
 filename_time = "times.txt";
 sensitivity_errs = np.loadtxt(filename_sensitivity);
@@ -16,7 +16,7 @@ plt.ylabel("Error in sensitivity",fontsize=12);
 plt.legend(fontsize=11);
 plt.savefig('newfig.eps', format='eps')
 plt.show();
-
+'''
 
 '''
 h_array = np.loadtxt('h_array.txt');
@@ -45,3 +45,31 @@ plt.ylim(0,200);
 plt.savefig('newfig.eps', format='eps')
 plt.show();
 '''
+
+'''
+# plot sensitivity array
+s_array = np.loadtxt("s_array_djbar_ds_vs_s_runs.txt");
+sensitivity_array = np.loadtxt("sensitivity_array_djbar_ds_vs_s_runs.txt");
+plt.figure();
+n_runs=10;
+for j in range(n_runs):
+    plt.plot(s_array, sensitivity_array[:,j],'*',color='blue');
+
+plt.xlabel('s');
+plt.ylabel(r"$d\bar{j}/ds$");
+plt.savefig("djds_vs_s_lorentz.eps",format="eps");
+plt.show();
+'''
+
+T_array = np.loadtxt("T_array_djbar_ds_vs_T_runs.txt");
+sensitivity_array = np.loadtxt("sensitivity_array_djbar_ds_vs_T_runs.txt");
+n_runs=10;
+# plot sensitivity array
+plt.figure();
+for j in range(n_runs):
+    plt.semilogx(T_array, sensitivity_array[:,j],'*',color='blue');
+
+plt.xlabel('T');
+plt.ylabel(r"$d\bar{j}/ds$");
+plt.savefig("djds_vs_T_lorentz.eps",format="eps");
+plt.show();
