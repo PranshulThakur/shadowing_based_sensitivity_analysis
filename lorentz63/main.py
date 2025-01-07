@@ -62,6 +62,43 @@ def plot_lyapunov_exponents(T, dt, s):
     adjoint_march.compute_lyapunov_exponents();
     return 0;
     
+def djbar_ds_err_vs_T_convergence_sqrtT():
+    n_runs = 2;  #20.0
+    n_times = 100;
+    T_final = 20.0; #500.0 
+    T_array = np.zeros(n_times);
+    sensitivity_array = np.zeros( (n_times, n_runs));
+    sensitivity_avg = np.zeros(n_times);
+    sensitivity_err = np.zeros(n_times);
+    dt = 0.01;
+    
+    c_factor = pow(T_final,1.0/(n_times-1.0));
+    for i in range(n_times):
+        Ti = pow(c_factor,i);
+        T_array[i] = round(Ti/0.2)*0.2;
+
+    s = 0.0;
+    print(T_array);
+    for i in range(n_times):
+        sensitivity_avg[i] = 0.0;
+        for j in range(n_runs):
+            sensitivity_array[i,j] = compute_adjoint_sensitivity(T_array[i],dt,s);
+            sensitivity_avg[i] += sensitivity_array[i,j];
+
+        sensitivity_avg[i] /= n_runs;
+        sensitivity_err[i] = abs(sensitivity_avg[i]-1.0);
+    
+    # plot sensitivity array
+    plt.figure();
+    plt.loglog(T_array, sensitivity_err,'*',color='blue');
+    
+    plt.xlabel('T');
+    plt.ylabel("Error in sensitivity");
+    plt.show();
+
+    np.savetxt('T_array_djbar_ds_err_vs_T_convergence_sqrtT.txt', T_array);
+    np.savetxt('sensitivity_array_djbar_ds_err_vs_T_convergence_sqrtT.txt', sensitivity_err);
+    return 0;
 
 def djbar_ds_vs_T():
     n_runs = 10; #10
@@ -126,7 +163,8 @@ def djbar_ds_vs_s():
         
 #djbar_ds_vs_T();
 #djbar_ds_vs_s();
-plot_lyapunov_exponents(100.0,0.01,0.0);
+#plot_lyapunov_exponents(100.0,0.01,0.0);
+djbar_ds_err_vs_T_convergence_sqrtT();
 '''
 T = 100.0;
 T_extra = 20.0;
