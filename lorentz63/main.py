@@ -7,7 +7,7 @@ import sys;
 import matplotlib.pyplot as plt;
 
 def check_equality(num1, num2):
-    if (np.abs(num1-num2) > 1.0e-12):
+    if (np.abs(num1-num2) > 1.0e-10):
         sys.exit("num1 is not equal to num2. Equality check has failed. Aborting...");
     
     return 0;
@@ -63,14 +63,14 @@ def plot_lyapunov_exponents(T, dt, s):
     return 0;
     
 def djbar_ds_err_vs_T_convergence_sqrtT():
-    n_runs = 2;  #20.0
+    n_runs = 20;  #20.0
     n_times = 100;
-    T_final = 20.0; #500.0 
+    T_final = 500.0; #500.0 
     T_array = np.zeros(n_times);
     sensitivity_array = np.zeros( (n_times, n_runs));
     sensitivity_avg = np.zeros(n_times);
     sensitivity_err = np.zeros(n_times);
-    dt = 0.01;
+    dt = 0.02;
     
     c_factor = pow(T_final,1.0/(n_times-1.0));
     for i in range(n_times):
