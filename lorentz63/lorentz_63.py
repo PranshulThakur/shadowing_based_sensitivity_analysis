@@ -93,14 +93,36 @@ class Lorentz_63:
 
     def plot_3d_curve(self, u):
         import matplotlib.pyplot as plt;
-        from mpl_toolkits.mplot3d import Axes3D;
+        #from mpl_toolkits.mplot3d import Axes3D;
+        from mpl_toolkits.mplot3d.art3d import Line3DCollection
+        from matplotlib.cm import ScalarMappable
+        from matplotlib.colors import Normalize
+        def get_segments(x, y, z):
+            """Convert lists of coordinates to a list of segments to be used
+                with Matplotlib's Line3DCollection.
+            """
+            points = np.ma.array((x, y, z)).T.reshape(-1, 1, 3)
+            return np.ma.concatenate([points[:-1], points[1:]], axis=1);
+
+
         fig = plt.figure();
         ax = fig.add_subplot(projection = "3d");
-        ax.plot(u[:,0], u[:,1], u[:,2], linewidth = 2, color = "b");
+        cmap = plt.get_cmap('viridis');
+        segments = get_segments(u[:,0],u[:,1],u[:,2]);
+        c = Line3DCollection(segments, cmap=cmap, array=u[:,2]);
+        ax.add_collection(c);
+        fig.colorbar(c,pad=0.15,label='z');
+        #ax.plot(u[:,0], u[:,1], u[:,2], linewidth = 2);#, color = "g");
+        x = u[:,0];
+        y = u[:,1];
+        z = u[:,2];
+        ax.set_xlim(x.min(), x.max())
+        ax.set_ylim(y.min(), y.max())
+        ax.set_zlim(z.min(), z.max())
         ax.set_xlabel("x");
         ax.set_ylabel("y");
         ax.set_zlabel("z");
-        ax.set_title ( 'Lorenz 63: trajectory of solution' );
+        plt.savefig("lorentz63.png");
         plt.show();
         return;
 
