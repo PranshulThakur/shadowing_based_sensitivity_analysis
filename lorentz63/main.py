@@ -65,7 +65,7 @@ def plot_lyapunov_exponents(T, dt, s):
 def djbar_ds_err_vs_T_convergence_sqrtT():
     n_runs = 20;  #20.0
     n_times = 100;
-    T_final = 500.0; #500.0 
+    T_final = 200.0; #500.0 
     T_array = np.zeros(n_times);
     sensitivity_array = np.zeros( (n_times, n_runs));
     sensitivity_avg = np.zeros(n_times);
@@ -166,7 +166,7 @@ def djbar_ds_vs_s():
 #plot_lyapunov_exponents(100.0,0.01,0.0);
 djbar_ds_err_vs_T_convergence_sqrtT();
 '''
-T = 100.0;
+T = 20.0;
 T_extra = 20.0;
 T_total = T + T_extra;
 dt = 0.01;
@@ -177,9 +177,12 @@ for i in range(m_total+1):
     times_stored[i] = i*dt;
             
 u0 = np.random.rand(3);
-lorentz_solver = Lorentz_63(dt, m_total);
+lorentz_solver = Lorentz_63(dt, m_total,0.0);
 functional = FunctionalLorentz(m);
 u_stored = lorentz_solver.compute_trajectory(u0);
+lorentz_solver.plot_3d_curve(u_stored);
+'''
+'''
 n_subspace_vectors = 1;
 delT = 0.2;
 adjoint_march = AdjointMarch(lorentz_solver, functional, u_stored, times_stored,dt, n_subspace_vectors,delT,T,T_extra);

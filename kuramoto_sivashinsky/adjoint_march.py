@@ -299,6 +299,10 @@ class AdjointMarch:
         plt.ylabel("t");
         plt.savefig('adjoint_ks.png', format='png');
         plt.show();
+
+        np.savetxt("xarray_adjoint.txt",x_array);
+        np.savetxt("timesarray_adjoint.txt",times_array);
+        np.savetxt("adjoint_vec.txt",adjoint_vec);
         
         return 0;
 

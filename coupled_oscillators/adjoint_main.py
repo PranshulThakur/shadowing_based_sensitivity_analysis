@@ -196,11 +196,11 @@ def required_computecanada_time(elapsed_time_ref):
 
 
 #run_eigenvalue_convergence();
-run_time_dependence_convergence();
+#run_time_dependence_convergence();
 #run_grid_convergence();
-'''
+
 u0 = np.random.rand(4);
-T_final = 200.0;
+T_final = 100.0;
 dt = 0.01;
 m_steps = round(T_final/dt);
 coupled_oscillator = CoupledOscillator(dt,m_steps);
@@ -212,4 +212,4 @@ adjoint_array = lss_adjoint.compute_adjoint_solution(u,adjoint_bc);
 sensitivity_val = functional.compute_adjoint_sensitivity(adjoint_array,u,coupled_oscillator);
 print("sensitivity = ",sensitivity_val);
 coupled_oscillator.plot_3d_curve(u);
-'''    
+    

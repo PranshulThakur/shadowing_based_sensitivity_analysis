@@ -3,6 +3,136 @@ from functional_ks import *;
 from adjoint_march import *;
 import numpy as np;
 
+def check_equality(num1, num2):
+    if (np.abs(num1-num2) > 1.0e-10):
+        print("num1 = ",num1);
+        print("num2 = ",num2);
+        sys.exit("num1 is not equal to num2. Equality check has failed. Aborting...");
+    
+    return 0;
+    
+def plot_primal_adjoint_solution_and_lyapunov_exponents():
+    dt = 0.05;
+    T = 500.0;
+    delT = 5.0;
+    check_equality(T/delT, round(T/delT));
+    T_extra = 20.0;
+    check_equality(T_extra/delT, round(T_extra/delT));
+    T_total = T + T_extra;
+    m = round(T/dt);
+    check_equality(m,T/dt);
+    m_total = round(T_total/dt);
+    check_equality(T_total/dt,m_total);
+    times_stored = np.zeros(m_total+1);
+    for i in range(m_total+1):
+        times_stored[i] = i*dt;
+            
+    n_int_grid_points = 127; #127, 255, 511
+    u0 = np.random.rand(n_int_grid_points);
+    ks_solver = KuramotoSivashinsky(dt,m_total,n_int_grid_points,0.0);
+    functional_ks = FunctionalKS(m,n_int_grid_points);
+    u_stored = ks_solver.compute_trajectory(u0);
+    ks_solver.plot_trajectory(u_stored);
+    n_subspace_vectors = 20;
+    adjoint_march = AdjointMarch(ks_solver, functional_ks, u_stored, times_stored,dt, n_subspace_vectors,delT,T,T_extra);
+    adjoint_march.compute_QR_matrices();
+    sensitivity_val = adjoint_march.compute_sensitivity();
+    print("Sensitivity = ",sensitivity_val);
+    adjoint_march.compute_lyapunov_exponents();
+    adjoint_march.plot_adjoint_solution();
+    return 0;
+
+
+def compute_adjoint_sensitivity(T, dt, s): 
+    delT = 5.0;
+    check_equality(T/delT, round(T/delT));
+    T_extra = 20.0;
+    check_equality(T_extra/delT, round(T_extra/delT));
+    T_total = T + T_extra;
+    m = round(T/dt);
+    check_equality(m,T/dt);
+    m_total = round(T_total/dt);
+    check_equality(T_total/dt,m_total);
+    times_stored = np.zeros(m_total+1);
+    for i in range(m_total+1):
+        times_stored[i] = i*dt;
+            
+    n_int_grid_points = 127; #127, 255, 511
+    u0 = np.random.rand(n_int_grid_points);
+    ks_solver = KuramotoSivashinsky(dt,m_total,n_int_grid_points,s);
+    functional_ks = FunctionalKS(m,n_int_grid_points);
+    u_stored = ks_solver.compute_trajectory(u0);
+    n_subspace_vectors = 20;
+    adjoint_march = AdjointMarch(ks_solver, functional_ks, u_stored, times_stored,dt, n_subspace_vectors,delT,T,T_extra);
+    adjoint_march.compute_QR_matrices();
+    sensitivity_val = adjoint_march.compute_sensitivity();
+
+    return sensitivity_val;
+
+def djbar_ds_vs_T():
+    n_runs = 10; #10
+    n_times = 10;
+    T_final = 500.0; #500.0
+    T_array = np.zeros(n_times);
+    sensitivity_array = np.zeros( (n_times, n_runs));
+    dt = 0.05;
+    
+    c_factor = pow(T_final/10.0,1.0/(n_times-1.0));
+    for i in range(n_times):
+        Ti = pow(c_factor,i)*10.0;
+        T_array[i] = round(Ti/5.0)*5.0;
+
+    s = 0.0;
+    print(T_array);
+    for i in range(n_times):
+        for j in range(n_runs):
+            sensitivity_array[i,j] = compute_adjoint_sensitivity(T_array[i],dt,s);
+    '''
+    # plot sensitivity array
+    plt.figure();
+    for j in range(n_runs):
+        plt.semilogx(T_array, sensitivity_array[:,j],'*',color='blue');
+    
+    plt.xlabel('T');
+    plt.ylabel(r"$d\bar{j}/ds$");
+    plt.show();
+    '''
+    np.savetxt('T_array_djbar_ds_vs_T_runs.txt', T_array);
+    np.savetxt('sensitivity_array_djbar_ds_vs_T_runs.txt', sensitivity_array);
+    return 0;
+
+def djbar_ds_vs_s():
+    n_runs = 10; #10
+    n_s = 10; #50
+    T = 200.0; 
+    s_array = np.zeros(n_s);
+    sensitivity_array = np.zeros( (n_s, n_runs));
+    dt = 0.05;
+    
+    for i in range(n_s):
+        s_array[i] = -1.0 + i*2.0/(n_s-1.0);
+
+    for i in range(n_s):
+        for j in range(n_runs):
+            sensitivity_array[i,j] = compute_adjoint_sensitivity(T,dt,s_array[i]);
+    '''
+    # plot sensitivity array
+    plt.figure();
+    for j in range(n_runs):
+        plt.plot(s_array, sensitivity_array[:,j],'*',color='blue');
+    
+    plt.xlabel('s');
+    plt.ylabel(r"$d\bar{j}/ds$");
+    plt.show();
+    '''
+    np.savetxt('s_array_djbar_ds_vs_s_runs.txt', s_array);
+    np.savetxt('sensitivity_array_djbar_ds_vs_s_runs.txt', sensitivity_array);
+    return 0;
+
+#plot_primal_adjoint_solution_and_lyapunov_exponents();
+djbar_ds_vs_T();
+djbar_ds_vs_s();
+'''
 T = 200.0;
 T_extra = 20.0;
 T_total = T + T_extra;
@@ -28,7 +158,7 @@ sensitivity_val = adjoint_march.compute_sensitivity();
 print("Sensitivity = ",sensitivity_val);
 adjoint_march.compute_lyapunov_exponents();
 adjoint_march.plot_adjoint_solution();
-
+'''
 '''
 def interpolate_trajectory_to_coarse_grid_and_time(u_fine,dt_fine,n_int_grid_points_fine,L,T_final,dt_coarse,n_int_grid_points_coarse):
     u_coarse_grid = interpolate_trajectory_to_coarse_grid(u_fine,dt_fine,T_final,n_int_grid_points_fine,n_int_grid_points_coarse,L);

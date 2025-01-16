@@ -122,6 +122,9 @@ class Lorentz_63:
         ax.set_xlabel("x");
         ax.set_ylabel("y");
         ax.set_zlabel("z");
+        ax.w_xaxis.set_pane_color((1.0, 1.0, 1.0, 1.0));
+        ax.w_yaxis.set_pane_color((1.0, 1.0, 1.0, 1.0));
+        ax.w_zaxis.set_pane_color((1.0, 1.0, 1.0, 1.0));
         plt.savefig("lorentz63.png");
         plt.show();
         return;

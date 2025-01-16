@@ -3,12 +3,12 @@ from rk4 import rk4vec
 from rk4 import rk4imex
 from scipy import sparse;
 class KuramotoSivashinsky:
-    def __init__(self, dt, m_time_steps, n_int_grid_points):
+    def __init__(self, dt, m_time_steps, n_int_grid_points, s):
         self.dt = dt;
         self.m_time_steps = m_time_steps;
         self.n_int_grid_points = n_int_grid_points;
         self.L = 128.0;
-        self.c = 0.0;
+        self.c = s;
         self.dx = self.L/(self.n_int_grid_points + 1.0);
         A = np.zeros((n_int_grid_points,n_int_grid_points));
         I_minus_Aa13_dt = np.zeros((n_int_grid_points,n_int_grid_points));

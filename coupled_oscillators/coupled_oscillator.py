@@ -102,6 +102,7 @@ class CoupledOscillator:
         return u;
 
     def plot_3d_curve(self, u):
+        '''
         import matplotlib.pyplot as plt;
         from mpl_toolkits.mplot3d import Axes3D;
         a1_vec = np.zeros(self.m_steps);
@@ -114,6 +115,44 @@ class CoupledOscillator:
         ax.set_ylabel(r"$y_2$");
         ax.set_zlabel(r"$a_1$");
         plt.savefig('attractor_coupled_oscillator.eps', format='eps')
+        plt.show();
+        ''' 
+        import matplotlib.pyplot as plt;
+        from mpl_toolkits.mplot3d.art3d import Line3DCollection
+        from matplotlib.cm import ScalarMappable
+        from matplotlib.colors import Normalize
+        def get_segments(x, y, z):
+            """Convert lists of coordinates to a list of segments to be used
+                with Matplotlib's Line3DCollection.
+            """
+            points = np.ma.array((x, y, z)).T.reshape(-1, 1, 3)
+            return np.ma.concatenate([points[:-1], points[1:]], axis=1);
+
+        a1_vec = np.zeros(self.m_steps);
+        for i in range(self.m_steps):
+            a1_vec[i] = u[i,0]**2 + u[i,1]**2;
+
+        fig = plt.figure();
+        ax = fig.add_subplot(projection = "3d");
+        cmap = plt.get_cmap('winter');
+        segments = get_segments(u[:,2],u[:,3],a1_vec);
+        c = Line3DCollection(segments, cmap=cmap, array=a1_vec);
+        ax.add_collection(c);
+        fig.colorbar(c,pad=0.15,label=r"$a_1$");
+        #ax.plot(u[:,0], u[:,1], u[:,2], linewidth = 2);#, color = "g");
+        x = u[:,2];
+        y = u[:,3];
+        z = a1_vec;
+        ax.set_xlim(x.min(), x.max())
+        ax.set_ylim(y.min(), y.max())
+        ax.set_zlim(z.min(), z.max())
+        ax.set_xlabel(r"$x_2$");
+        ax.set_ylabel(r"$y_2$");
+        ax.set_zlabel(r"$a_1$");
+        ax.w_xaxis.set_pane_color((1.0, 1.0, 1.0, 1.0));
+        ax.w_yaxis.set_pane_color((1.0, 1.0, 1.0, 1.0));
+        ax.w_zaxis.set_pane_color((1.0, 1.0, 1.0, 1.0));
+        plt.savefig('attractor_coupled_oscillator.png', format='png');
         plt.show();
         return;
 

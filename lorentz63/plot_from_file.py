@@ -60,7 +60,7 @@ plt.ylabel(r"$d\bar{j}/ds$");
 plt.savefig("djds_vs_s_lorentz.eps",format="eps");
 plt.show();
 '''
-
+'''
 T_array = np.loadtxt("T_array_djbar_ds_vs_T_runs.txt");
 sensitivity_array = np.loadtxt("sensitivity_array_djbar_ds_vs_T_runs.txt");
 n_runs=10;
@@ -72,4 +72,21 @@ for j in range(n_runs):
 plt.xlabel('T');
 plt.ylabel(r"$d\bar{j}/ds$");
 plt.savefig("djds_vs_T_lorentz.eps",format="eps");
+plt.show();
+'''
+
+T_array = np.loadtxt("T_array_djbar_ds_err_vs_T_convergence_sqrtT.txt");
+sensitivity_err = np.loadtxt("sensitivity_array_djbar_ds_err_vs_T_convergence_sqrtT.txt");
+sensitivity_convergence_ref1 = 0.03/np.sqrt(T_array);
+sensitivity_convergence_ref2 = 0.05/T_array;
+plt.figure();
+plt.loglog(T_array[0:89], sensitivity_err[0:89],'*',color='blue');
+plt.loglog(T_array[0:89], sensitivity_convergence_ref1[0:89],'--', label=r"$\mathcal{O}(1/\sqrt{T})$");
+#plt.loglog(T_array, sensitivity_convergence_ref2,'--', label=r"$\mathcal{O}(1/T)$");
+
+plt.xlabel('T',fontsize=12);
+plt.ylabel("Error in sensitivity",fontsize=12);
+plt.ylim([5e-4,5.0]);
+plt.legend(fontsize=11);
+plt.savefig("djds_vs_T_sqrtT_convergence_lorentz.eps",format="eps");
 plt.show();
