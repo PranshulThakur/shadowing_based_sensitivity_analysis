@@ -70,7 +70,7 @@ def djbar_ds_err_vs_T_convergence_sqrtT():
     sensitivity_array = np.zeros( (n_times, n_runs));
     sensitivity_avg = np.zeros(n_times);
     sensitivity_err = np.zeros(n_times);
-    dt = 0.02;
+    dt = 0.01;
     
     c_factor = pow(T_final,1.0/(n_times-1.0));
     for i in range(n_times):
