@@ -31,6 +31,7 @@ class AdjointMarch:
         self.v_stored = np.zeros( (self.K,(self.nsteps+1),self.nstate));
 
     def compute_s0_initial(self,Q,v):
+        '''
         u = self.get_u_at_time_t(0.0);
         f = self.solver.f(0.0,self.nstate,u);
         j = self.functional.j_val(u);
@@ -40,7 +41,7 @@ class AdjointMarch:
         rhs = self.jbar - j - np.dot(f,v);
         if w_norm > 1.0e-6:
             self.s0_initial = (rhs/(w_norm*w_norm))*w;
-        
+        '''
         return 0;
 
     def compute_sensitivity(self):
