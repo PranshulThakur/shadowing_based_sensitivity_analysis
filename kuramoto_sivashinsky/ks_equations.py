@@ -244,6 +244,10 @@ class KuramotoSivashinsky:
         plt.ylabel("t");
         plt.savefig('primal_soln_ks.png', format='png');
         plt.show();
+        
+        np.savetxt("xarray_primal.txt",x_array);
+        np.savetxt("timesarray_primal.txt",times_array);
+        np.savetxt("primal_solution.txt",u);
         return;
 
     def plot_3d_curve(self, u):

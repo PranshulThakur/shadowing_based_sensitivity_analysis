@@ -244,6 +244,8 @@ class AdjointMarch:
         plt.ylabel("Lyapunov exponents");
         plt.savefig('lyapunov_exponents.eps', format='eps');
         plt.show();
+        np.savetxt("times_array_lyapunov_exp.txt",times_stored);
+        np.savetxt("lyapunov_exp_array.txt",lyapunov_exp_stored);
         return 0;
         
     def plot_adjoint_solution(self):
