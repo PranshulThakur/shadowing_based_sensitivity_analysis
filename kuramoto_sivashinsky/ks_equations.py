@@ -2,6 +2,7 @@ import numpy as np
 from rk4 import rk4vec
 from rk4 import rk4imex
 from scipy import sparse;
+from integration_functions import *; 
 class KuramotoSivashinsky:
     def __init__(self, dt, m_time_steps, n_int_grid_points, s):
         self.dt = dt;

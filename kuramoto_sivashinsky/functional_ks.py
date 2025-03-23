@@ -1,5 +1,5 @@
 import numpy as np;
-
+from integration_functions import *; 
 class FunctionalKS:
     def __init__(self,m_time_steps,n_int_grid_points):
         self.m_time_steps = m_time_steps;
@@ -27,22 +27,39 @@ class FunctionalKS:
         return js;
 
     def compute_j_avg(self,u):
+        ''' 
         javg = 0.0;
         for i in range(self.m_time_steps+1):
             factor = 1.0;
             if (i==0) or (i==self.m_time_steps):
                 factor = 0.5;
             javg += factor*self.j_val(u[i]);
+        
+        '''
+        integrand = np.zeros(self.m_time_steps+1);
+        for i in range(self.m_time_steps+1):
+            integrand[i] = self.j_val(u[i]);
 
+        javg = simpson_integration(integrand,self.m_time_steps,1);
+        #javg = trapezoidal_integration(integrand,self.m_time_steps,1);
+    
         javg /= self.m_time_steps;
         return javg;
     
     def compute_js_avg(self,u):
+        '''
         js_avg = 0.0;
         js_avg = (self.j_s(u[0]) + self.j_s(u[self.m_time_steps]))/2.0;
         for i in range(1,self.m_time_steps):
             js_avg += self.j_s(u[i]);
+        '''
 
+        integrand = np.zeros(self.m_time_steps+1);
+        for i in range(self.m_time_steps+1):
+            integrand[i] = self.j_s(u[i]);
+
+        js_avg = simpson_integration(integrand,self.m_time_steps,1);
+        #js_avg = trapezoidal_integration(integrand,self.m_time_steps,1);
         js_avg /= self.m_time_steps;
         return js_avg;
 
@@ -59,6 +76,14 @@ class FunctionalKS:
         return sensitivity_val;
 
     def compute_adjoint_sensitivity(self, adjoint_array, u, solver):
+        integrand = np.zeros(self.m_time_steps+1);
+        for i in range(self.m_time_steps+1):
+            fs = solver.f_c(u[i]);
+            integrand[i] = np.dot(adjoint_array[i],fs) + self.j_s(u[i]);
+
+        sensitivity_val = simpson_integration(integrand,self.m_time_steps,1);
+        #sensitivity_val = trapezoidal_integration(integrand,self.m_time_steps,1);
+        '''
         sensitivity_val = 0.0;
         for i in range(self.m_time_steps+1):
             factor = 1.0;
@@ -66,7 +91,7 @@ class FunctionalKS:
                 factor = 0.5;
             fs = solver.f_c(u[i]);
             sensitivity_val += factor*(np.dot(adjoint_array[i],fs) + self.j_s(u[i]));
-
+        '''
         sensitivity_val /= self.m_time_steps;
         return sensitivity_val;
 
