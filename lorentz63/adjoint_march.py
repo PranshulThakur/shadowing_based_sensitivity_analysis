@@ -3,6 +3,7 @@ import scipy;
 from scipy.sparse.linalg import spsolve
 from rk4 import *
 import sys
+from integration_functions import *;
 
 class AdjointMarch:
     def __init__(self, solver, functional, u_stored, times_stored, dt, n_subspace_vectors,delT, T, T_extra): # T_total = T + T_extra
@@ -97,19 +98,30 @@ class AdjointMarch:
         Y = Y_ti;
         self.Y_stored[i,self.nsteps,:,:] = Y;
         u = self.get_u_at_time_t(ti);
-        self.d[i,:] = 0.5*(Y.T @ self.solver.f_z0(u));
+        #self.d[i,:] = 0.5*(Y.T @ self.solver.f_z0(u));
+        integrand = np.zeros((self.nsteps+1,self.n_subspace_vectors));
+        integrand[self.nsteps,:] = Y.T @ self.solver.f_z0(u);
         for j in range(nsteps):
             tj = -j*self.dt + ti;
             Y =  rk4mat_reverse(tj,self.nstate,self.n_subspace_vectors,Y,self.dt,self.adjoint_rhs_hom);
             self.Y_stored[i,(self.nsteps-j-1),:,:] = Y;
             tj_minus = tj-self.dt;
             u = self.get_u_at_time_t(tj_minus);
+            '''
             if j==(nsteps-1):
                 self.d[i,:] += 0.5*(Y.T @ self.solver.f_z0(u));
             else:
                 self.d[i,:] += Y.T @ self.solver.f_z0(u);
+            '''
+            integrand[self.nsteps-j-1,:] = Y.T @ self.solver.f_z0(u);
+
+        for k in range(self.n_subspace_vectors):
+            self.d[i,k] = simpson_integration(integrand[:,k],self.nsteps,self.dt);
+            #self.d[i,k] = trapezoidal_integration(integrand[:,k],self.nsteps,self.dt);
         
+        '''
         self.d[i,:] *=self.dt;
+        '''
         
         return Y;
     
@@ -118,19 +130,29 @@ class AdjointMarch:
         v = v_ti;
         self.v_stored[i,nsteps,:] = v;
         u = self.get_u_at_time_t(ti);
-        self.h[i] = 0.5*(np.dot(v, self.solver.f_z0(u)));
+        #self.h[i] = 0.5*(np.dot(v, self.solver.f_z0(u)));
+        integrand = np.zeros(self.nsteps+1);
+        integrand[self.nsteps] = np.dot(v, self.solver.f_z0(u));
         for j in range(nsteps):
             tj = -j*self.dt + ti;
             v =  rk4mat_reverse(tj,self.nstate,1,v,self.dt,self.adjoint_rhs_nonhom);
             self.v_stored[i,nsteps-j-1,:] = v;
             tj_minus = tj-self.dt;
             u = self.get_u_at_time_t(tj_minus);
+            '''
             if j==(nsteps-1):
                 self.h[i] += 0.5*(np.dot(v , self.solver.f_z0(u)));
             else:
                 self.h[i] += np.dot(v , self.solver.f_z0(u));
+            '''
+            integrand[self.nsteps-j-1] =  np.dot(v, self.solver.f_z0(u));  
         
+        
+        self.h[i] = simpson_integration(integrand,self.nsteps,self.dt);
+        #self.h[i] = trapezoidal_integration(integrand,self.nsteps,self.dt);
+        '''
         self.h[i] *=self.dt;
+        '''
         return v;
             
     def compute_Y_terminal(self,Y_random,terminal_time):
@@ -200,6 +222,46 @@ class AdjointMarch:
         plt.show();
         return 0;
         
+    def compute_abs_f_dot_adjoint_average(self):
+        m = round(self.T/self.dt);
+        adjoint_vec = np.zeros((m+1,self.nstate));
+        f_dot_adjoint = np.zeros(m+1);
+        time_vec = np.zeros(m+1);
+        for i in range(self.K):
+            ival = self.K-i-1;
+            if ival>0:
+                # check continuity
+                adjoint_iminus_int = (self.Y_stored[ival,0,:,:] @ self.s[ival,:]) + self.v_stored[ival,0,:];
+                adjoint_iminus_ext = (self.Y_stored[ival-1,self.nsteps,:,:] @ self.s[ival-1,:]) + self.v_stored[ival-1,self.nsteps,:];
+                diff = adjoint_iminus_int - adjoint_iminus_ext;
+                norm_val = np.sqrt(np.dot(diff,diff));
+                if norm_val>1.0e-11:
+                    print("Adjoint solution is not continuous. Norm value = ",norm_val);
+                    sys.exit(0);
+
+            for j in range(self.nsteps+1):
+                jval = self.nsteps-j;
+                iK = ival+1;
+                km = m - (self.K-iK)*self.nsteps - (self.nsteps-jval);
+                adjoint_vec[km,:] = (self.Y_stored[ival,jval,:,:] @ self.s[ival,:]) + self.v_stored[ival,jval,:];
+                time_vec[km] = km*self.dt;
+                u = self.get_u_at_time_t(time_vec[km]);
+                f = self.solver.f(time_vec[km],self.nstate,u);
+                f_dot_adjoint[km] = np.dot(f,adjoint_vec[km,:]);
+        
+        #integrate f_dot_adjoint
+        '''
+        average_f_dot_adjoint = (f_dot_adjoint[0]+f_dot_adjoint[m])/2.0;
+        for i in range(1,m):
+            average_f_dot_adjoint += f_dot_adjoint[i];
+        '''
+        average_f_dot_adjoint = simpson_integration(f_dot_adjoint,m,1.0);
+        #average_f_dot_adjoint = trapezoidal_integration(f_dot_adjoint,m,1.0);
+       
+        average_f_dot_adjoint/=m;
+        return abs(average_f_dot_adjoint);
+
+
     def plot_adjoint_solution(self):
         m = round(self.T/self.dt);
         adjoint_vec = np.zeros((m+1,self.nstate));
@@ -240,11 +302,11 @@ class AdjointMarch:
         import matplotlib.pyplot as plt;
         plt.plot(time_vec,adjoint_vec);
         plt.show();
-        
+        '''    
         plt.figure;
         plt.plot(self.R[:,0,0],'*');
         plt.show();
-        
+        '''
         return 0;
 
                 

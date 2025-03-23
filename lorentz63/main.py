@@ -13,7 +13,7 @@ def check_equality(num1, num2):
     return 0;
     
 
-def compute_adjoint_sensitivity(T, dt, s): 
+def compute_adjoint_sensitivity(T, dt, s, return_f_dot_adjoint_average=False): 
     delT = 0.2;
     check_equality(T/delT, round(T/delT));
     T_extra = 20.0;
@@ -36,6 +36,10 @@ def compute_adjoint_sensitivity(T, dt, s):
     adjoint_march.compute_QR_matrices();
     adjoint_march.compute_s_forwardmarch();
     sensitivity_val = adjoint_march.compute_sensitivity();
+    
+    if return_f_dot_adjoint_average:
+        return adjoint_march.compute_abs_f_dot_adjoint_average();
+    
     return sensitivity_val;
 
 def plot_lyapunov_exponents(T, dt, s):
@@ -88,6 +92,7 @@ def djbar_ds_err_vs_T_convergence_sqrtT():
         sensitivity_avg[i] /= n_runs;
         sensitivity_err[i] = abs(sensitivity_avg[i]-1.0);
     
+    '''
     # plot sensitivity array
     plt.figure();
     plt.loglog(T_array, sensitivity_err,'*',color='blue');
@@ -95,9 +100,36 @@ def djbar_ds_err_vs_T_convergence_sqrtT():
     plt.xlabel('T');
     plt.ylabel("Error in sensitivity");
     plt.show();
-
+    '''
     np.savetxt('T_array_djbar_ds_err_vs_T_convergence_sqrtT.txt', T_array);
     np.savetxt('sensitivity_array_djbar_ds_err_vs_T_convergence_sqrtT.txt', sensitivity_err);
+    return 0;
+
+def f_dot_adjoint_average_convergence_dt():
+    n_runs = 10;
+    n_grids = 5;
+    dt_array = np.zeros(n_grids);
+    f_dot_adjoint_average_array = np.zeros((n_grids,n_runs));
+    T = 100.0;
+    s = 0.0;
+    for i in range(n_grids):
+        dt_array[i] = 0.02*(0.5**i);
+    print(dt_array); 
+    for i in range(n_grids):
+        for j in range(n_runs):
+            f_dot_adjoint_average_array[i,j] = compute_adjoint_sensitivity(T,dt_array[i],s,True);
+    '''    
+    # plot convergence of f_dot_adjoint
+    plt.figure();
+    for j in range(n_runs):
+        plt.loglog(dt_array, f_dot_adjoint_average_array[:,j],'*',color='blue');
+    
+    plt.xlabel(r"$\Delta t$");
+    plt.ylabel(r"$\frac{1}{T}\int_0^T\psi^Tfdt$");
+    plt.show();
+    '''
+    np.savetxt('dt_array_f_dot_adjoint.txt', dt_array);
+    np.savetxt('f_dot_adjoint_runs_array.txt', f_dot_adjoint_average_array);
     return 0;
 
 def djbar_ds_vs_T():
@@ -135,7 +167,7 @@ def djbar_ds_vs_T():
 def djbar_ds_vs_s():
     n_runs = 10; #10
     n_s = 50; #50
-    T = 50.0; #500.0
+    T = 100.0; #500.0
     s_array = np.zeros(n_s);
     sensitivity_array = np.zeros( (n_s, n_runs));
     dt = 0.01;
@@ -161,10 +193,11 @@ def djbar_ds_vs_s():
     return 0;
 
         
-#djbar_ds_vs_T();
-#djbar_ds_vs_s();
+djbar_ds_vs_T();
+djbar_ds_vs_s();
 #plot_lyapunov_exponents(100.0,0.01,0.0);
 djbar_ds_err_vs_T_convergence_sqrtT();
+f_dot_adjoint_average_convergence_dt();
 '''
 T = 20.0;
 T_extra = 20.0;

@@ -1,5 +1,6 @@
 import numpy as np
 from rk4 import rk4vec
+from integration_functions import *;
 
 class Lorentz_63:
     def __init__(self, dt, m_steps, z0):
