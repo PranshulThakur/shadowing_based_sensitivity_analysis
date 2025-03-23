@@ -89,7 +89,7 @@ def f_dot_adjoint_average_convergence_dt():
     for i in range(n_grids):
         for j in range(n_runs):
             f_dot_adjoint_average_array[i,j] = compute_adjoint_sensitivity(T,dt_array[i],s,True);
-    
+    '''    
     # plot convergence of f_dot_adjoint
     plt.figure();
     for j in range(n_runs):
@@ -98,6 +98,7 @@ def f_dot_adjoint_average_convergence_dt():
     plt.xlabel(r"$\Delta t$");
     plt.ylabel(r"$\frac{1}{T}\int_0^T\psi^Tfdt$");
     plt.show();
+    '''
     np.savetxt('dt_array_f_dot_adjoint.txt', dt_array);
     np.savetxt('f_dot_adjoint_runs_array.txt', f_dot_adjoint_average_array);
     return 0;
