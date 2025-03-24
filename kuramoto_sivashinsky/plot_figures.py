@@ -43,7 +43,7 @@ fig.colorbar(contourplot,pad=0.15,label=r'$\psi$');
 plt.savefig('adjoint_ks.png', format='png');
 plt.show();
 '''
-'''
+
 # Sensitivity - T plot
 T_array = np.loadtxt("T_array_djbar_ds_vs_T_runs255.txt");
 sensitivity_array = np.loadtxt("sensitivity_array_djbar_ds_vs_T_runs255.txt");
@@ -69,15 +69,21 @@ plt.figure();
 for j in range(n_runs):
     #plt.semilogx(T_array, sensitivity_array[:,j],'*',color='blue');
     plt.semilogx(T_array, sensitivity_array_avg,'*',color='blue');
-    #for i in range(n_times):
-        #plt.plot([T_array[i], T_array[i]],[three_sigma_lower[i], three_sigma_upper[i]],color='red');
-
-plt.xlabel('T');
-plt.ylabel(r"$d\bar{j}/ds$");
-#plt.ylim([-1.5,0.0]);
+    '''
+    for i in range(n_times):
+        plt.plot([T_array[i], T_array[i]],[three_sigma_lower[i], three_sigma_upper[i]],color='red');
+        horizontal_width=0.1;
+        left = T_array[i]*np.exp(-horizontal_width/2.0);
+        right = T_array[i]*np.exp(horizontal_width/2.0);
+        plt.plot([left,right],[three_sigma_upper[i],three_sigma_upper[i]],color='red');
+        plt.plot([left,right],[three_sigma_lower[i],three_sigma_lower[i]],color='red');
+    '''
+plt.xlabel('T',fontsize=12);
+plt.ylabel(r"$d\bar{J}/ds$",fontsize=12);
+plt.ylim([-1.5,0.0]);
 plt.savefig("djds_vs_T_ks.eps",format="eps");
 plt.show();
-'''
+
 '''
 # Sensitivity - s plot
 # plot sensitivity array
@@ -88,16 +94,21 @@ sensitivity_array_500 = np.loadtxt("sensitivity_array_djbar_ds_vs_s_runs255.txt"
 plt.figure();
 n_runs=10;
 for j in range(n_runs):
-    plt.plot(s_array_500, sensitivity_array_500[:,j],'*',color='blue');
-    plt.plot(s_array_50, sensitivity_array_50[:,j],'*',color='red');
+    if j==0:
+        plt.plot(s_array_50, sensitivity_array_50[:,j],'*',color='red', label="T=50");
+        plt.plot(s_array_500, sensitivity_array_500[:,j],'*',color='blue',label="T=500");
+    else:
+        plt.plot(s_array_50, sensitivity_array_50[:,j],'*',color='red');
+        plt.plot(s_array_500, sensitivity_array_500[:,j],'*',color='blue');
 
-plt.xlabel('s');
-plt.ylabel(r"$d\bar{j}/ds$");
+plt.xlabel('s',fontsize=12);
+plt.ylabel(r"$d\bar{J}/ds$",fontsize=12);
 plt.ylim([-2.0,0.0]);
+plt.legend();
 plt.savefig("djds_vs_s_ks.eps",format="eps");
 plt.show();
 '''
-
+'''
 # plot convergence of f_dot_adjoint
 dt_array = np.loadtxt("dt_array_f_dot_adjoint.txt");
 f_dot_adjoint_average_array = np.loadtxt("f_dot_adjoint_runs_array.txt");
@@ -116,4 +127,6 @@ plt.loglog(dt_array,expected_errors,'--',label=r"$\mathcal{O}(\Delta t^3)$",colo
 plt.xlabel(r"$\Delta t$",fontsize=12);
 plt.ylabel(r"$\frac{1}{T}\int_0^T\psi^Tfdt$",fontsize=12);
 plt.legend(fontsize=12);
+plt.savefig("adjoint_neutral_convergence_ks.eps",format="eps");
 plt.show();
+'''
