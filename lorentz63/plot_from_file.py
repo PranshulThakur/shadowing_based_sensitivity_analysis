@@ -45,7 +45,6 @@ plt.ylim(0,200);
 plt.savefig('newfig.eps', format='eps')
 plt.show();
 '''
-
 '''
 # plot sensitivity array
 s_array = np.loadtxt("s_array_djbar_ds_vs_s_runs.txt");
@@ -55,8 +54,9 @@ n_runs=10;
 for j in range(n_runs):
     plt.plot(s_array, sensitivity_array[:,j],'*',color='blue');
 
-plt.xlabel('s');
-plt.ylabel(r"$d\bar{j}/ds$");
+plt.xlabel('s',fontsize=12);
+plt.ylabel(r"$d\bar{J}/ds$",fontsize=12);
+plt.ylim([0.9,1.1]);
 plt.savefig("djds_vs_s_lorentz.eps",format="eps");
 plt.show();
 '''
@@ -69,24 +69,49 @@ plt.figure();
 for j in range(n_runs):
     plt.semilogx(T_array, sensitivity_array[:,j],'*',color='blue');
 
-plt.xlabel('T');
-plt.ylabel(r"$d\bar{j}/ds$");
+plt.xlabel('T',fontsize=12);
+plt.ylabel(r"$d\bar{J}/ds$",fontsize=12);
 plt.savefig("djds_vs_T_lorentz.eps",format="eps");
 plt.show();
 '''
 
+# sqrt T convergence
 T_array = np.loadtxt("T_array_djbar_ds_err_vs_T_convergence_sqrtT.txt");
 sensitivity_err = np.loadtxt("sensitivity_array_djbar_ds_err_vs_T_convergence_sqrtT.txt");
 sensitivity_convergence_ref1 = 0.03/np.sqrt(T_array);
 sensitivity_convergence_ref2 = 0.05/T_array;
 plt.figure();
-plt.loglog(T_array[0:89], sensitivity_err[0:89],'*',color='blue');
-plt.loglog(T_array[0:89], sensitivity_convergence_ref1[0:89],'--', label=r"$\mathcal{O}(1/\sqrt{T})$");
-#plt.loglog(T_array, sensitivity_convergence_ref2,'--', label=r"$\mathcal{O}(1/T)$");
+plt.loglog(T_array, sensitivity_err,'*',color='blue');
+plt.loglog(T_array, sensitivity_convergence_ref1,'--', label=r"$\mathcal{O}(1/\sqrt{T})$");
 
 plt.xlabel('T',fontsize=12);
 plt.ylabel("Error in sensitivity",fontsize=12);
-plt.ylim([5e-4,5.0]);
+#plt.ylim([5e-4,5.0]);
+plt.ylim([2.6e-4,0.2]);
 plt.legend(fontsize=11);
 plt.savefig("djds_vs_T_sqrtT_convergence_lorentz.eps",format="eps");
 plt.show();
+
+'''
+# plot convergence of f_dot_adjoint
+dt_array = np.loadtxt("dt_array_f_dot_adjoint.txt");
+f_dot_adjoint_average_array = np.loadtxt("f_dot_adjoint_runs_array.txt");
+n_runs=10;
+C=10**6;
+expected_errors = C*(dt_array**4);
+plt.figure();
+for j in range(n_runs):
+    if j==0:
+        plt.loglog(dt_array, f_dot_adjoint_average_array[:,j],'*',color='blue', label=r"$\frac{1}{T}\int_0^T\psi^Tfdt$");
+    else:
+        plt.loglog(dt_array, f_dot_adjoint_average_array[:,j],'*',color='blue');
+
+plt.loglog(dt_array,expected_errors,'--',label=r"$\mathcal{O}(\Delta t^4)$",color="red");
+
+plt.xlabel(r"$\Delta t$",fontsize=12);
+plt.ylabel(r"$\frac{1}{T}\int_0^T\psi^Tfdt$",fontsize=12);
+plt.xlim([0.8*10**-3,0.3*10**-1]);
+plt.legend(fontsize=12);
+plt.savefig("adjoint_neutral_convergence_lorentz.eps",format="eps");
+plt.show();
+'''
