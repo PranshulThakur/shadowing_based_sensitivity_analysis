@@ -8,9 +8,19 @@ class FunctionalKS:
 
     def j_val(self,ui):
         
+        #j=0.0;
+        #for i in range(self.n_int_grid_points):
+        #    j += ui[i];
         j=0.0;
         for i in range(self.n_int_grid_points):
-            j += ui[i];
+            w = 1.0;
+            if i==0 or i==(self.n_int_grid_points-1):
+                w = 59.0/48.0;
+            elif i==1 or i==(self.n_int_grid_points-2):
+                w = 43.0/48.0;
+            elif i==2 or i==(self.n_int_grid_points-3):
+                w = 49.0/48.0;
+            j += w*ui[i]; 
 
         j/=(self.n_int_grid_points+1.0);
         return j; 
@@ -18,8 +28,18 @@ class FunctionalKS:
     def j_u(self,ui):
         ju = np.zeros(self.n_int_grid_points);
         for i in range(self.n_int_grid_points):
-            ju[i] = 1.0/(self.n_int_grid_points+1.0);
-        
+            #ju[i] = 1.0/(self.n_int_grid_points+1.0);
+            w = 1.0;
+            if i==0 or i==(self.n_int_grid_points-1):
+                w = 59.0/48.0;
+            elif i==1 or i==(self.n_int_grid_points-2):
+                w = 43.0/48.0;
+            elif i==2 or i==(self.n_int_grid_points-3):
+                w = 49.0/48.0;
+
+            ju[i] = w/(self.n_int_grid_points+1.0);
+            
+
         return ju;
 
     def j_s(self,ui):
