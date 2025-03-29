@@ -1,6 +1,21 @@
 from matplotlib import pyplot as plt
 import numpy as np
 
+def mean_array(y,x_array,n_x,n_runs):
+    mean_arr = np.zeros(n_x);
+    for i in range(n_x):
+        for j in range(n_runs):
+            mean_arr[i] += y[i,j];
+        mean_arr[i] /= n_runs;
+    return mean_arr;
+def std_dev_array(y,x_array,n_x,n_runs,mean_arr):
+    std_dev_arr = np.zeros(n_x);
+    for i in range(n_x):
+        for j in range(n_runs):
+            std_dev_arr[i] += (y[i,j]-mean_arr[i])**2;
+        std_dev_arr[i] = np.sqrt(std_dev_arr[i]/n_runs);
+    return std_dev_arr;
+
 '''
 # Primal solution
 x_array = np.loadtxt("xarray_primal.txt");
@@ -69,19 +84,19 @@ plt.figure();
 for j in range(n_runs):
     #plt.semilogx(T_array, sensitivity_array[:,j],'*',color='blue');
     plt.semilogx(T_array, sensitivity_array_avg,'*',color='blue');
-    '''
-    for i in range(n_times):
-        plt.plot([T_array[i], T_array[i]],[three_sigma_lower[i], three_sigma_upper[i]],color='red');
-        horizontal_width=0.1;
-        left = T_array[i]*np.exp(-horizontal_width/2.0);
-        right = T_array[i]*np.exp(horizontal_width/2.0);
-        plt.plot([left,right],[three_sigma_upper[i],three_sigma_upper[i]],color='red');
-        plt.plot([left,right],[three_sigma_lower[i],three_sigma_lower[i]],color='red');
-    '''
+    
+    #for i in range(n_times):
+    #    plt.plot([T_array[i], T_array[i]],[three_sigma_lower[i], three_sigma_upper[i]],color='red');
+    #   horizontal_width=0.1;
+    #    left = T_array[i]*np.exp(-horizontal_width/2.0);
+    #    right = T_array[i]*np.exp(horizontal_width/2.0);
+    #    plt.plot([left,right],[three_sigma_upper[i],three_sigma_upper[i]],color='red');
+    #    plt.plot([left,right],[three_sigma_lower[i],three_sigma_lower[i]],color='red');
+plt.fill_between(T_array,three_sigma_lower, three_sigma_upper,alpha=0.3,color="blue");
 plt.xlabel('T',fontsize=12);
 plt.ylabel(r"$d\bar{J}/ds$",fontsize=12);
 plt.ylim([-1.5,0.0]);
-plt.savefig("djds_vs_T_ks.eps",format="eps");
+plt.savefig("djds_vs_T_ks.pdf",format="pdf");
 plt.show();
 
 '''
@@ -93,19 +108,31 @@ s_array_500 = np.loadtxt("s_array_djbar_ds_vs_s_runs255.txt");
 sensitivity_array_500 = np.loadtxt("sensitivity_array_djbar_ds_vs_s_runs255.txt");
 plt.figure();
 n_runs=10;
-for j in range(n_runs):
-    if j==0:
-        plt.plot(s_array_50, sensitivity_array_50[:,j],'*',color='red', label="T=50");
-        plt.plot(s_array_500, sensitivity_array_500[:,j],'*',color='blue',label="T=500");
-    else:
-        plt.plot(s_array_50, sensitivity_array_50[:,j],'*',color='red');
-        plt.plot(s_array_500, sensitivity_array_500[:,j],'*',color='blue');
-
+n_s = len(s_array_500);
+average_50 = mean_array(sensitivity_array_50, s_array_50, n_s, n_runs);
+std_dev_50 = std_dev_array(sensitivity_array_50, s_array_50, n_s, n_runs,average_50);
+sensitivity_50_lower = average_50-std_dev_50;
+sensitivity_50_upper = average_50+std_dev_50;
+average_500 = mean_array(sensitivity_array_500, s_array_500, n_s, n_runs);
+std_dev_500 = std_dev_array(sensitivity_array_500, s_array_500, n_s, n_runs,average_500);
+sensitivity_500_lower = average_500-std_dev_500;
+sensitivity_500_upper = average_500+std_dev_500;
+#for j in range(n_runs):
+#    if j==0:
+#        plt.plot(s_array_50, sensitivity_array_50[:,j],'*',color='red', label="T=50");
+#        plt.plot(s_array_500, sensitivity_array_500[:,j],'*',color='blue',label="T=500");
+#    else:
+#        plt.plot(s_array_50, sensitivity_array_50[:,j],'*',color='red');
+#        plt.plot(s_array_500, sensitivity_array_500[:,j],'*',color='blue');
+plt.plot(s_array_50, average_50, '*',color="red", label="T=50");
+plt.fill_between(s_array_50, sensitivity_50_lower, sensitivity_50_upper, alpha=0.3, color="red");
+plt.plot(s_array_500, average_500, '*',color="blue", label="T=500");
+plt.fill_between(s_array_500, sensitivity_500_lower, sensitivity_500_upper, alpha=0.3, color="blue");
 plt.xlabel('s',fontsize=12);
 plt.ylabel(r"$d\bar{J}/ds$",fontsize=12);
 plt.ylim([-2.0,0.0]);
 plt.legend();
-plt.savefig("djds_vs_s_ks.eps",format="eps");
+plt.savefig("djds_vs_s_ks.pdf",format="pdf");
 plt.show();
 '''
 '''

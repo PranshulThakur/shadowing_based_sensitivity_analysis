@@ -81,8 +81,8 @@ for i in range(n_s):
 
     sensitivity_array_std_dev[i] = np.sqrt(sensitivity_array_std_dev[i]/n_runs);
 
-sensitivity_array_lower = sensitivity_array_avg - 3.0*sensitivity_array_std_dev;
-sensitivity_array_upper = sensitivity_array_avg + 3.0*sensitivity_array_std_dev;
+sensitivity_array_lower = sensitivity_array_avg - sensitivity_array_std_dev;
+sensitivity_array_upper = sensitivity_array_avg + sensitivity_array_std_dev;
 
 plt.plot(s_array, sensitivity_array_avg, '*', color="red");
 plt.fill_between(s_array, sensitivity_array_lower, sensitivity_array_upper, alpha = 0.3, color = 'blue');
@@ -94,24 +94,31 @@ plt.fill_between(s_array, sensitivity_array_lower, sensitivity_array_upper, alph
 
 plt.xlabel('s',fontsize=12);
 plt.ylabel(r"$d\bar{J}/ds$",fontsize=12);
-plt.ylim([0.9,1.1]);
+plt.ylim([0.95,1.05]);
 plt.savefig("djds_vs_s_lorentz.pdf",format="pdf");
 plt.show();
 '''
-'''
+
 T_array = np.loadtxt("T_array_djbar_ds_vs_T_runs.txt");
 sensitivity_array = np.loadtxt("sensitivity_array_djbar_ds_vs_T_runs.txt");
+n_T = len(T_array);
 n_runs=10;
+sensitivity_avg = mean_array(sensitivity_array, T_array, n_T, n_runs);
+sensitivity_std_dev = std_dev_array(sensitivity_array, T_array, n_T, n_runs, sensitivity_avg);
+sensitivity_lower = sensitivity_avg-sensitivity_std_dev;
+sensitivity_upper = sensitivity_avg+sensitivity_std_dev;
 # plot sensitivity array
 plt.figure();
 for j in range(n_runs):
-    plt.semilogx(T_array, sensitivity_array[:,j],'*',color='blue');
+    #plt.semilogx(T_array, sensitivity_array[:,j],'*',color='blue');
+    plt.semilogx(T_array, sensitivity_avg,'*',color='blue');
 
+plt.fill_between(T_array, sensitivity_lower, sensitivity_upper,alpha=0.3,color="blue");
 plt.xlabel('T',fontsize=12);
 plt.ylabel(r"$d\bar{J}/ds$",fontsize=12);
-plt.savefig("djds_vs_T_lorentz.eps",format="eps");
+plt.savefig("djds_vs_T_lorentz.pdf",format="pdf");
 plt.show();
-'''
+
 '''
 # sqrt T convergence
 T_array = np.loadtxt("T_array_djbar_ds_err_vs_T_convergence_sqrtT.txt");
@@ -129,6 +136,7 @@ plt.ylim([2.6e-4,0.2]);
 plt.legend(fontsize=11);
 plt.savefig("djds_vs_T_sqrtT_convergence_lorentz.eps",format="eps");
 plt.show();
+'''
 '''
 # plot convergence of f_dot_adjoint
 dt_array = np.loadtxt("dt_array_f_dot_adjoint.txt");
@@ -156,4 +164,4 @@ plt.xlim([0.8*10**-3,0.3*10**-1]);
 plt.legend(fontsize=12);
 plt.savefig("adjoint_neutral_convergence_lorentz.eps",format="eps");
 plt.show();
-
+'''
