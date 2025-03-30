@@ -1,6 +1,7 @@
 import numpy as np
 from rk4 import rk4vec
 from rk4 import rk4imex
+from rk4 import rk3
 from scipy import sparse;
 from integration_functions import *; 
 class KuramotoSivashinsky:
@@ -76,13 +77,13 @@ class KuramotoSivashinsky:
         return f_val;
 
     def f(self,t,m,u):
-        f_val = np.zeros(len(u));
+        f_val = np.zeros(self.n_int_grid_points);
         u_plus1 = 0.0;
         u_minus1 = 0.0;
         u_plus2 = 0.0;
         u_minus2 = 0.0;
         for i in range(self.n_int_grid_points):
-            if i==0: #i=1
+            if i==0: 
                 u_plus1 = u[i+1];
                 u_minus1 = 0.0;
                 u_plus2 = u[i+2];
@@ -140,6 +141,41 @@ class KuramotoSivashinsky:
                 fu_T_adjoint[i] = -psi[i-1]*uterm;
             else:
                 fu_T_adjoint[i] = (psi[i+1] - psi[i-1])*uterm;
+
+        return fu_T_adjoint;
+    
+    def f_u_transposed_adjoint(self,u,psi,n_subspace_vectors):
+        if n_subspace_vectors==1:
+            fu_T_adjoint = np.zeros(self.n_int_grid_points);
+        else :
+            fu_T_adjoint = np.zeros((self.n_int_grid_points,n_subspace_vectors));
+
+        for i in range(self.n_int_grid_points):
+            if i==0:
+                fu_T_adjoint[i] += psi[i+1]*u[i]/(2.0*self.dx);
+                fu_T_adjoint[i] += psi[i+1]*self.c/(2.0*self.dx);
+                fu_T_adjoint[i] += -1.0/(self.dx**2) * (-2.0*psi[i] + psi[i+1]);
+                fu_T_adjoint[i] += -1.0/(self.dx**4) * ( 7.0*psi[i] - 4.0*psi[i+1] + psi[i+2]);
+            elif i==1:
+                fu_T_adjoint[i] += (psi[i+1] - psi[i-1])*u[i]/(2.0*self.dx);
+                fu_T_adjoint[i] += (psi[i+1] - psi[i-1])*self.c/(2.0*self.dx);
+                fu_T_adjoint[i] += -1.0/(self.dx**2) * (psi[i-1] -2.0*psi[i] + psi[i+1]);
+                fu_T_adjoint[i] += -1.0/(self.dx**4) * ( -4.0*psi[i-1] + 6.0*psi[i] - 4.0*psi[i+1] + psi[i+2]);
+            elif i==(self.n_int_grid_points-2):
+                fu_T_adjoint[i] += (psi[i+1] - psi[i-1])*u[i]/(2.0*self.dx);
+                fu_T_adjoint[i] += (psi[i+1] - psi[i-1])*self.c/(2.0*self.dx);
+                fu_T_adjoint[i] += -1.0/(self.dx**2) * (psi[i-1] -2.0*psi[i] + psi[i+1]);
+                fu_T_adjoint[i] += -1.0/(self.dx**4) * (psi[i-2] -4.0*psi[i-1] + 6.0*psi[i] - 4.0*psi[i+1]);
+            elif i==(self.n_int_grid_points-1):
+                fu_T_adjoint[i] +=  -psi[i-1]*u[i]/(2.0*self.dx);
+                fu_T_adjoint[i] +=  -psi[i-1]*self.c/(2.0*self.dx);
+                fu_T_adjoint[i] += -1.0/(self.dx**2) * (psi[i-1] -2.0*psi[i]);
+                fu_T_adjoint[i] += -1.0/(self.dx**4) * (psi[i-2] -4.0*psi[i-1] + 7.0*psi[i]);
+            else:
+                fu_T_adjoint[i] += (psi[i+1] - psi[i-1])*u[i]/(2.0*self.dx);
+                fu_T_adjoint[i] += (psi[i+1] - psi[i-1])*self.c/(2.0*self.dx);
+                fu_T_adjoint[i] += -1.0/(self.dx**2) * (psi[i-1] -2.0*psi[i] + psi[i+1]);
+                fu_T_adjoint[i] += -1.0/(self.dx**4) * (psi[i-2] -4.0*psi[i-1] + 6.0*psi[i] - 4.0*psi[i+1] + psi[i+2]);
 
         return fu_T_adjoint;
                  
@@ -214,13 +250,15 @@ class KuramotoSivashinsky:
         n_pre_steps = round(T/self.dt);
         for i in range(n_pre_steps):
             ti = i*self.dt;
-            u0 = rk4imex(ti,self.n_int_grid_points,u0,self.dt,self.f_explicit, self.Aop_invA_13, self.Aop_invA_12);
+            #u0 = rk4imex(ti,self.n_int_grid_points,u0,self.dt,self.f_explicit, self.Aop_invA_13, self.Aop_invA_12);
+            u0 = rk3(ti,self.n_int_grid_points,u0,self.dt,self.f);
 
         u = np.zeros((self.m_time_steps+1, self.n_int_grid_points));
         u[0,:] = u0;
         for i in range(self.m_time_steps):
             ti = i*self.dt;
-            u[i+1,:] = rk4imex(ti,self.n_int_grid_points,u[i,:],self.dt,self.f_explicit, self.Aop_invA_13, self.Aop_invA_12);
+            #u[i+1,:] = rk4imex(ti,self.n_int_grid_points,u[i,:],self.dt,self.f_explicit, self.Aop_invA_13, self.Aop_invA_12);
+            u[i+1,:] = rk3(ti,self.n_int_grid_points,u[i,:],self.dt,self.f);
         
         return u;
 

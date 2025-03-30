@@ -1,5 +1,6 @@
 #! /usr/bin/env python
 #
+import numpy as np
 def rk4 ( t0, u0, dt, f ):
 
 #*****************************************************************************80
@@ -277,7 +278,6 @@ def rk4imex(ti,n_int_grid_points,un,dt,f_explicit, Aop_invA_13, Aop_invA_12):
     return un_plus_1;
 
 def rk4imex_reverse(ti,n_int_grid_points,n_subspace_vectors,psi_i,dt,g_explicit, transposeop_13, transposeop_12):
-    import numpy as np
     g2_im = np.zeros((n_int_grid_points,n_subspace_vectors));
     g3_im = np.zeros((n_int_grid_points,n_subspace_vectors));
     g4_im = np.zeros((n_int_grid_points,n_subspace_vectors));
@@ -314,6 +314,39 @@ def rk4imex_reverse(ti,n_int_grid_points,n_subspace_vectors,psi_i,dt,g_explicit,
     return psi_i_minus;
 
 
+def rk3(tn,n_int_grid_points,un,dt,f):
+    c2 = 1.0/2.0; c3 = 3.0/4.0;
+    b1 = 2.0/9.0; b2 = 1.0/3.0; b3 = 4.0/9.0;
+    a21 = 1.0/2.0; a31 = 0.0; a32 = 3.0/4.0;
+
+    f1 = np.zeros(n_int_grid_points);
+    f2 = np.zeros(n_int_grid_points);
+    f3 = np.zeros(n_int_grid_points);
+    un_plus = np.zeros(n_int_grid_points);
+
+    f1 = f(tn,n_int_grid_points,un);
+    f2 = f(tn + c2*dt, n_int_grid_points, un + dt*a21*f1);
+    f3 = f(tn + c3*dt, n_int_grid_points, un + dt*a31*f1 + dt*a32*f2);
+
+    un_plus = un + dt*(b1*f1 + b2*f2 + b3*f3);
+    return un_plus;
+
+def rk3_reverse(tn,n_int_grid_points,n_subspace_vectors,psi_n,dt,g):
+    c2 = 1.0/2.0; c3 = 3.0/4.0;
+    b1 = 2.0/9.0; b2 = 1.0/3.0; b3 = 4.0/9.0;
+    a21 = 1.0/2.0; a31 = 0.0; a32 = 3.0/4.0;
+    g1 = np.zeros((n_int_grid_points,n_subspace_vectors));
+    g2 = np.zeros((n_int_grid_points,n_subspace_vectors));
+    g3 = np.zeros((n_int_grid_points,n_subspace_vectors));
+    psi_n_minus = np.zeros((n_int_grid_points,n_subspace_vectors));
+
+    g1 = g(tn, psi_n);
+    g2 = g(tn - c2*dt, psi_n - dt*a21*g1);
+    g3 = g(tn - c3*dt, psi_n - dt*a31*g1 - dt*a32*g2);
+
+    psi_n_minus = psi_n - dt*(b1*g1 + b2*g2 + b3*g3);
+    return psi_n_minus;
+    
 
 def rk4vec_test ( ):
 
