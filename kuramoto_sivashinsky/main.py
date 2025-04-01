@@ -28,7 +28,7 @@ def plot_primal_adjoint_solution_and_lyapunov_exponents():
     for i in range(m_total+1):
         times_stored[i] = i*dt;
             
-    n_int_grid_points = 127; #127, 255, 511
+    n_int_grid_points = 255; #127, 255, 511
     #u0 = np.random.rand(n_int_grid_points);
     u0 = np.random.uniform(-0.5,0.501,n_int_grid_points);
     ks_solver = KuramotoSivashinsky(dt,m_total,n_int_grid_points,0.0);
@@ -59,7 +59,7 @@ def compute_adjoint_sensitivity(T, dt, s, return_f_dot_adjoint_average=False):
     for i in range(m_total+1):
         times_stored[i] = i*dt;
             
-    n_int_grid_points = 127; #127, 255, 511
+    n_int_grid_points = 255; #127, 255, 511
     #u0 = np.random.rand(n_int_grid_points);
     u0 = np.random.uniform(-0.5,0.501,n_int_grid_points);
     ks_solver = KuramotoSivashinsky(dt,m_total,n_int_grid_points,s);
@@ -107,10 +107,10 @@ def f_dot_adjoint_average_convergence_dt():
 def djbar_ds_vs_T():
     n_runs = 10; #10
     n_times = 10;
-    T_final = 200.0; #500.0
+    T_final = 500.0; #500.0
     T_array = np.zeros(n_times);
     sensitivity_array = np.zeros( (n_times, n_runs));
-    dt = 0.02;
+    dt = 0.05;
     
     c_factor = pow(T_final/10.0,1.0/(n_times-1.0));
     for i in range(n_times):
