@@ -45,7 +45,7 @@ def plot_primal_adjoint_solution_and_lyapunov_exponents():
     return 0;
 
 
-def compute_adjoint_sensitivity(T, dt, s, return_f_dot_adjoint_average=False): 
+def compute_adjoint_sensitivity(T, dt, s,u0, return_f_dot_adjoint_average=False): 
     delT = 5.0;
     check_equality(T/delT, round(T/delT));
     T_extra = 20.0;
@@ -59,9 +59,8 @@ def compute_adjoint_sensitivity(T, dt, s, return_f_dot_adjoint_average=False):
     for i in range(m_total+1):
         times_stored[i] = i*dt;
             
-    n_int_grid_points = 255; #127, 255, 511
-    #u0 = np.random.rand(n_int_grid_points);
-    u0 = np.random.uniform(-0.5,0.501,n_int_grid_points);
+    n_int_grid_points = 127; #127, 255, 511
+    #u0 = np.random.uniform(-0.5,0.501,n_int_grid_points);
     ks_solver = KuramotoSivashinsky(dt,m_total,n_int_grid_points,s);
     functional_ks = FunctionalKS(m,n_int_grid_points);
     u_stored = ks_solver.compute_trajectory(u0);
@@ -106,11 +105,17 @@ def f_dot_adjoint_average_convergence_dt():
 
 def djbar_ds_vs_T():
     n_runs = 10; #10
-    n_times = 10;
+    n_times = 20;
     T_final = 500.0; #500.0
     T_array = np.zeros(n_times);
     sensitivity_array = np.zeros( (n_times, n_runs));
     dt = 0.05;
+    n_int_grid_points = 127; #127, 255, 511
+    u0_array = np.zeros((n_runs,n_int_grid_points));
+    for i in range(n_runs):
+        u0_array[i,:] = np.random.uniform(-0.5,0.501,n_int_grid_points);
+    
+    np.savetxt("u0_array.txt",u0_array);
     
     c_factor = pow(T_final/10.0,1.0/(n_times-1.0));
     for i in range(n_times):
@@ -121,7 +126,7 @@ def djbar_ds_vs_T():
     print(T_array);
     for i in range(n_times):
         for j in range(n_runs):
-            sensitivity_array[i,j] = compute_adjoint_sensitivity(T_array[i],dt,s);
+            sensitivity_array[i,j] = compute_adjoint_sensitivity(T_array[i],dt,s,u0_array[j,:]);
     '''
     # plot sensitivity array
     plt.figure();
