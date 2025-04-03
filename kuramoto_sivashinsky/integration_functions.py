@@ -27,4 +27,18 @@ def trapezoidal_integration(f,n,h): # n is the number of steps. f has n+1 values
 
     return integral_val;
 
-    
+
+def QR_decomposition(A,n,m): # A is nxm
+    Q = np.zeros((n,m));
+    R = np.zeros((m,m));
+
+    for i in range(m):
+        Q[:,i] = A[:,i];
+        for j in range(i):
+            R[j,i] = np.dot(Q[:,j],A[:,i]);
+            Q[:,i] -= R[j,i]*Q[:,j];
+        R[i,i] = np.sqrt(np.dot(Q[:,i],Q[:,i]));
+        Q[:,i] /= R[i,i];
+
+    return Q, R;
+
