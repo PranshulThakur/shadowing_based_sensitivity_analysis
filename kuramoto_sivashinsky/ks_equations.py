@@ -250,15 +250,15 @@ class KuramotoSivashinsky:
         n_pre_steps = round(T/self.dt);
         for i in range(n_pre_steps):
             ti = i*self.dt;
-            #u0 = rk4imex(ti,self.n_int_grid_points,u0,self.dt,self.f_explicit, self.Aop_invA_13, self.Aop_invA_12);
-            u0 = rk3(ti,self.n_int_grid_points,u0,self.dt,self.f);
+            u0 = rk4imex(ti,self.n_int_grid_points,u0,self.dt,self.f_explicit, self.Aop_invA_13, self.Aop_invA_12);
+            #u0 = rk3(ti,self.n_int_grid_points,u0,self.dt,self.f);
 
         u = np.zeros((self.m_time_steps+1, self.n_int_grid_points));
         u[0,:] = u0;
         for i in range(self.m_time_steps):
             ti = i*self.dt;
-            #u[i+1,:] = rk4imex(ti,self.n_int_grid_points,u[i,:],self.dt,self.f_explicit, self.Aop_invA_13, self.Aop_invA_12);
-            u[i+1,:] = rk3(ti,self.n_int_grid_points,u[i,:],self.dt,self.f);
+            u[i+1,:] = rk4imex(ti,self.n_int_grid_points,u[i,:],self.dt,self.f_explicit, self.Aop_invA_13, self.Aop_invA_12);
+            #u[i+1,:] = rk3(ti,self.n_int_grid_points,u[i,:],self.dt,self.f);
         
         return u;
 
