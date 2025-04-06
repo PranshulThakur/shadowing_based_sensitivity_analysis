@@ -490,6 +490,63 @@ def rk4_tests ( ):
   print ( '  Normal end of execution.' )
   return
 
+
+def check_rk_order(A,b,s): # Returns order of rk
+    order = 0;
+
+    t1,t2,t3,t4,t5,t6,t7,t8 = 0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0;
+    for i in range(s):
+        t1 += b[i];
+        for j in range(s):
+            t2 += b[i]*A[i,j];
+            for k in range(s):
+                t3 += b[i]*A[i,j]*A[i,k];
+                t4 += b[i]*A[i,j]*A[j,k];
+                for l in range(s):
+                    t5 += b[i]*A[i,j]*A[i,k]*A[i,l];
+                    t6 += b[i]*A[i,j]*A[i,k]*A[k,l];
+                    t7 += b[i]*A[i,j]*A[j,k]*A[j,l];
+                    t8 += b[i]*A[i,j]*A[j,k]*A[k,l];
+    tol=1.0e-10;
+    if abs(t1-1)<tol:
+        order = 1;
+    else: 
+        return 0;
+    if abs(t2 - 0.5)<tol:
+        order = 2;
+    else :
+        return 1;
+    if abs(t3 - 1/3)<tol and abs(t4 - 1/6)<tol:
+        order = 3;
+    else:
+        return 2;
+    if abs(t5-1/4)<tol and abs(t6 - 1/8)<tol and abs(t7 - 1/12)<tol and abs(t8 - 1/24)<tol:
+        order = 4;
+    else:
+        return 3;
+
+    return order;
+
+def check_split_rk_order(A,A_hat,b,s): # Assuming same b for both butcher tableaus.
+    order_1 = check_rk_order(A,b,s);
+    order_2 = check_rk_order(A_hat,b,s);
+    # Check cross orders
+    t1 = 0.0;
+    t2 = 0.0;
+    t3 = 0.0;
+    for i in range(s):
+        for j in range(s):
+            for k in range(s):
+                t1 += b[i]*A[i,j]*A_hat[i,k];
+                t2 += b[i]*A[i,j]*A_hat[j,k];
+                t3 += b[i]*A_hat[i,j]*A[j,k];
+
+    order = 0.0;
+    tol = 1.0e-11;
+    if abs(t1-1/3)<tol and abs(t2-1/6)<tol and abs(t3-1/6)<tol:
+        order = 3;
+    return min(order_1,order_2,order);
+    
 def timestamp ( ):
 
 #*****************************************************************************80
@@ -562,4 +619,5 @@ if ( __name__ == '__main__' ):
   timestamp ( )
   rk4_tests ( )
   timestamp ( )
+
 

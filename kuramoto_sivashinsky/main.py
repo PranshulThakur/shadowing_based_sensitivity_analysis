@@ -3,6 +3,7 @@ from functional_ks import *;
 from adjoint_march import *;
 import numpy as np;
 from matplotlib import pyplot as plt;
+from rk4 import *;
 
 def check_equality(num1, num2):
     if (np.abs(num1-num2) > 1.0e-10):
