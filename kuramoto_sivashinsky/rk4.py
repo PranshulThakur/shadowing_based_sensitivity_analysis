@@ -313,41 +313,24 @@ def rk4imex_reverse(ti,n_int_grid_points,n_subspace_vectors,psi_i,dt,g_explicit,
 
     return psi_i_minus;
 
-def rk4imex_adjoint(n_int_grid_points,n_subspace_vectors,psi_n_plus,un,dt,N, transposeop_13, transposeop_12):
-    g2_im = np.zeros((n_int_grid_points,n_subspace_vectors));
-    g3_im = np.zeros((n_int_grid_points,n_subspace_vectors));
-    g4_im = np.zeros((n_int_grid_points,n_subspace_vectors));
-    g1_ex = np.zeros((n_int_grid_points,n_subspace_vectors));
-    g2_ex = np.zeros((n_int_grid_points,n_subspace_vectors));
-    g3_ex = np.zeros((n_int_grid_points,n_subspace_vectors));
-    g4_ex = np.zeros((n_int_grid_points,n_subspace_vectors));
-    psi_k = np.zeros((n_int_grid_points,n_subspace_vectors));
-    psi_i_minus = np.zeros((n_int_grid_points,n_subspace_vectors));
-
-    #k=1
-    g1_ex = g_explicit(ti, psi_i);
+def rk4imex_adjoint(n_int_grid_points,n_subspace_vectors,psi_n_plus,un,L,N,L_adjoint,N_adjoint,I_minus_12L_inv, I_minus_13L_inv,I_minus_12Ladjoint_inv, I_minus_13Ladjoint_inv,dt):
+    lambda_1 = np.zeros((n_int_grid_points,n_subspace_vectors));
+    lambda_2 = np.zeros((n_int_grid_points,n_subspace_vectors));
+    lambda_3 = np.zeros((n_int_grid_points,n_subspace_vectors));
+    lambda_4 = np.zeros((n_int_grid_points,n_subspace_vectors));
+    u1 = np.zeros((n_int_grid_points,n_subspace_vectors));
+    u2 = np.zeros((n_int_grid_points,n_subspace_vectors));
+    u3 = np.zeros((n_int_grid_points,n_subspace_vectors));
+    u4 = np.zeros((n_int_grid_points,n_subspace_vectors));
+    psi_n = np.zeros((n_int_grid_points,n_subspace_vectors));
     
-    #k=2
-    psi_k = psi_i - dt/3.0*g1_ex;
-    g2_im = transposeop_13 @ psi_k;
-    psi_k -= dt/3.0*g2_im; 
-    g2_ex = g_explicit(ti - dt/3.0, psi_k);
-    
-    #k=3
-    psi_k = psi_i - dt/2.0*g2_im - dt*g2_ex;
-    g3_im = transposeop_12 @ psi_k;
-    psi_k -= dt/2.0*g3_im; 
-    g3_ex = g_explicit(ti - dt, psi_k);
-    
-    #k=4
-    psi_k = psi_i - dt*(3.0/4.0 * g2_im - 1.0/4.0 * g3_im) - dt*(3.0/4.0 * g2_ex + 1.0/4.0 * g3_ex);
-    g4_im = transposeop_12 @ psi_k;
-    psi_k -= dt/2.0*g4_im; 
-    g4_ex = g_explicit(ti - dt, psi_k);
+    u1 = un;
+    u2 = I_minus_13L_inv @ (un + dt/3.0*N(u1));
+    u3 = I_minus_12L_inv @ (un + dt/2.0*L(u2) + dt*N(u2));
+    u4 = I_minus_12L_inv @ (un + dt*3.0/4.0*(L(u2)+N(u2)) + dt/4.0*(N(u3)-L(u3)));
 
-    psi_i_minus = psi_i -dt*( 3.0/4.0 * (g2_im + g2_ex) - 1.0/4.0 * (g3_im + g3_ex) + 1.0/2.0 * (g4_im + g4_ex)); 
 
-    return psi_i_minus;
+    return psi_n;
 
 
 def rk3(tn,n_int_grid_points,un,dt,f):
