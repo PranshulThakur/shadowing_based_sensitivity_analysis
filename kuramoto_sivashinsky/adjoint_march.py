@@ -128,16 +128,18 @@ class AdjointMarch:
         dpsi_dt = -self.solver.f_u_transposed_adjoint(u,adjoint_n,1) - j_u;
         return dpsi_dt;
 
-    def integrate_adjoint_hom(self,ti,nsteps,Y_ti,i):
+    def integrate_adjoint_hom(self,nsteps,Y_i,i):
         Y = np.zeros((self.nstate,self.n_subspace_vectors));
-        Y = Y_ti;
-        self.Y_stored[i,self.nsteps,:,:] = Y;
-        u = self.get_u_at_time_t(ti);
-        #self.d[i,:] = 0.5*(Y.T @ self.solver.f_c(u));
+        Y = Y_i;
+        self.Y_stored[i-1,self.nsteps,:,:] = Y;
+        t_index = i*nsteps;
+        u = self.u_stored[t_index,:];
         integrand = np.zeros((self.nsteps+1,self.n_subspace_vectors));
         integrand[self.nsteps,:] = Y.T @ self.solver.f_c(u);
         for j in range(nsteps):
-            tj = -j*self.dt + ti;
+            t_index -= 1;
+            uj = self.u_stored[t_index,:];
+
             Y = rk4imex_reverse(tj,self.nstate,self.n_subspace_vectors,Y,self.dt,self.adjoint_rhs_hom_explicit, self.solver.transposeop_13, self.solver.transposeop_12);
             #Y = rk3_reverse(tj,self.nstate,self.n_subspace_vectors,Y,self.dt,self.adjoint_rhs_hom);
             self.Y_stored[i,(self.nsteps-j-1),:,:] = Y;
@@ -230,9 +232,8 @@ class AdjointMarch:
         Y = self.compute_Y_terminal(Q_init, self.T+self.T_extra);
         v = self.compute_v_terminal(self.T);
         for i in range(self.K):
-            ival = self.K-i-1;
-            ti = self.T - i*self.delT;
-            Y = self.integrate_adjoint_hom(ti,self.nsteps,Y,ival);
+            ival = self.K-i;
+            Y = self.integrate_adjoint_hom(self.nsteps,Y,ival);
             Q, self.R[ival,:,:] = scipy.linalg.qr(Y,mode='economic');
             v = self.integrate_adjoint_nonhom(ti,self.nsteps,v,ival);
             self.b[ival,:] = - (Q.T @ v);

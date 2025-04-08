@@ -13,23 +13,21 @@ class KuramotoSivashinsky:
         self.c = s;
         self.dx = self.L/(self.n_int_grid_points + 1.0);
         A = np.zeros((n_int_grid_points,n_int_grid_points));
-        I_minus_Aa13_dt = np.zeros((n_int_grid_points,n_int_grid_points));
-        I_minus_Aa12_dt = np.zeros((n_int_grid_points,n_int_grid_points));
+        I = np.zeros((n_int_grid_points,n_int_grid_points));
         for i in range(self.n_int_grid_points):
+            I[i,i]=1.0;
             jaray = np.linspace(i-2,i+2,5,dtype=int);
             for j in jaray:
                 if j>=0 and j<=(self.n_int_grid_points-1):
                     A[i,j] = - self.d2udx2_du(i,j) - self.d4udx4_du(i,j);
-                    I_minus_Aa13_dt[i,j] = -A[i,j]*1.0/3.0*self.dt;
-                    I_minus_Aa12_dt[i,j] = -A[i,j]*1.0/2.0*self.dt;
             
-            I_minus_Aa13_dt[i,i] += 1.0;
-            I_minus_Aa12_dt[i,i] += 1.0;
-
-        self.Aop_invA_13 = sparse.csr_matrix(np.linalg.inv(I_minus_Aa13_dt) @ A); 
-        self.Aop_invA_12 = sparse.csr_matrix(np.linalg.inv(I_minus_Aa12_dt) @ A);
-        self.transposeop_13 = -1.0*self.Aop_invA_13.transpose().tocsr();
-        self.transposeop_12 = -1.0*self.Aop_invA_12.transpose().tocsr();
+        
+        self.A = sparse.csr_matrix(A);
+        self.A_transposed = self.A.transpose().tocsr();
+        self.I_minus_12A_inv =  sparse.csr_matrix(np.linalg.inv(I - dt/2.0*A)); 
+        self.I_minus_13A_inv =  sparse.csr_matrix(np.linalg.inv(I - dt/3.0*A)); 
+        self.I_minus_12Aadjoint_inv =  sparse.csr_matrix(np.linalg.inv(I - dt/2.0*A_transposed)); 
+        self.I_minus_13Aadjoint_inv =  sparse.csr_matrix(np.linalg.inv(I - dt/3.0*A_transposed)); 
 
     def update_spacetime_grid(self, n_int_grid_points_in, dt_in, T_in):
         self.dt = dt_in;
@@ -76,7 +74,11 @@ class KuramotoSivashinsky:
         
         return f_val;
 
-    def f(self,t,m,u):
+    def f_implicit(self,u):
+        f_val = self.A @ u;
+        return f_val;
+
+    def f(self,u):
         f_val = np.zeros(self.n_int_grid_points);
         u_plus1 = 0.0;
         u_minus1 = 0.0;
@@ -142,6 +144,15 @@ class KuramotoSivashinsky:
             else:
                 fu_T_adjoint[i] = (psi[i+1] - psi[i-1])*uterm;
 
+        return fu_T_adjoint;
+    
+    def f_u_transposed_adjoint_implicit(self,psi,n_subspace_vectors):
+        if n_subspace_vectors==1:
+            fu_T_adjoint = np.zeros(self.n_int_grid_points);
+        else :
+            fu_T_adjoint = np.zeros((self.n_int_grid_points,n_subspace_vectors));
+        
+        fu_T_adjoint = self.A_transposed @ psi;
         return fu_T_adjoint;
     
     def f_u_transposed_adjoint(self,u,psi,n_subspace_vectors):
@@ -250,14 +261,14 @@ class KuramotoSivashinsky:
         n_pre_steps = round(T/self.dt);
         for i in range(n_pre_steps):
             ti = i*self.dt;
-            u0 = rk4imex(ti,self.n_int_grid_points,u0,self.dt,self.f_explicit, self.Aop_invA_13, self.Aop_invA_12);
+            u0 = rk4imex(self.n_int_grid_points,u0,self.f_implicit,self.f_explicit,self.I_minus_12A_inv,self.I_minus_13A_inv,self.dt);    
             #u0 = rk3(ti,self.n_int_grid_points,u0,self.dt,self.f);
 
         u = np.zeros((self.m_time_steps+1, self.n_int_grid_points));
         u[0,:] = u0;
         for i in range(self.m_time_steps):
             ti = i*self.dt;
-            u[i+1,:] = rk4imex(ti,self.n_int_grid_points,u[i,:],self.dt,self.f_explicit, self.Aop_invA_13, self.Aop_invA_12);
+            u[i+1,:] = rk4imex(self.n_int_grid_points,u[i,:],self.f_implicit,self.f_explicit,self.I_minus_12A_inv,self.I_minus_13A_inv,self.dt):    
             #u[i+1,:] = rk3(ti,self.n_int_grid_points,u[i,:],self.dt,self.f);
         
         return u;
@@ -289,18 +300,6 @@ class KuramotoSivashinsky:
         np.savetxt("primal_solution.txt",u);
         return;
 
-    def plot_3d_curve(self, u):
-        import matplotlib.pyplot as plt;
-        from mpl_toolkits.mplot3d import Axes3D;
-        fig = plt.figure();
-        ax = fig.add_subplot(projection = "3d");
-        ax.plot(u[:,0], u[:,1], u[:,2], linewidth = 2, color = "b");
-        ax.set_xlabel("x");
-        ax.set_ylabel("y");
-        ax.set_zlabel("z");
-        ax.set_title ( 'Lorenz 63: trajectory of solution' );
-        plt.show();
-        return;
 
 
 

@@ -243,85 +243,30 @@ def rk4vec ( t0, m, u0, dt, f ):
 
   return u
 
-def rk4imex(ti,n_int_grid_points,un,dt,f_explicit, Aop_invA_13, Aop_invA_12):
-    import numpy as np
-    g1 = np.zeros(n_int_grid_points);
-    g2 = np.zeros(n_int_grid_points);
-    g3 = np.zeros(n_int_grid_points);
-    g4 = np.zeros(n_int_grid_points);
-    f2 = np.zeros(n_int_grid_points);
-    f3 = np.zeros(n_int_grid_points);
-    f4 = np.zeros(n_int_grid_points);
+def rk4imex(n_int_grid_points,un,L,N,I_minus_12L_inv,I_minus_13L_inv,dt):    
+    u1 = np.zeros(n_int_grid_points);
     u2 = np.zeros(n_int_grid_points);
     u3 = np.zeros(n_int_grid_points);
     u4 = np.zeros(n_int_grid_points);
-    un_plus_1 = np.zeros(n_int_grid_points);
-
-    g1 = f_explicit(un);
+    un_plus = np.zeros(n_int_grid_points);
     
-    u2 = un + dt/3.0*g1;
-    f2 = Aop_invA_13 @ u2;
-    u2 += dt/3.0*f2;
-    g2 = f_explicit(u2);
+    u1 = un;
+    u2 = I_minus_13L_inv @ (un + dt/3.0*N(u1));
+    u3 = I_minus_12L_inv @ (un + dt/2.0*L(u2) + dt*N(u2));
+    u4 = I_minus_12L_inv @ (un + dt*3.0/4.0*(L(u2)+N(u2)) + dt/4.0*(N(u3)-L(u3)));
 
-    u3 = un + dt/2.0*f2 + dt*g2;
-    f3 = Aop_invA_12 @ u3;
-    u3 += dt/2.0*f3;
-    g3 = f_explicit(u3);
+    un_plus = un + dt*0.75*(L(u2)+N(u2)) - dt*0.25*(L(u3)+N(u3)) + dt*0.5*(L(u4)+N(u4));
+    return un_plus;
 
-    u4 = un + dt*3.0/4.0*f2 - dt*1.0/4.0*f3 + dt*3.0/4.0*g2 + dt*1.0/4.0*g3;
-    f4 = Aop_invA_12 @ u4;
-    u4 += dt/2.0*f4;
-    g4 = f_explicit(u4);
-
-    un_plus_1 = un + dt*3.0/4.0*(f2 + g2) - dt*1.0/4.0*(f3+g3) + dt*1.0/2.0*(f4+g4);
-    return un_plus_1;
-
-def rk4imex_reverse(ti,n_int_grid_points,n_subspace_vectors,psi_i,dt,g_explicit, transposeop_13, transposeop_12):
-    g2_im = np.zeros((n_int_grid_points,n_subspace_vectors));
-    g3_im = np.zeros((n_int_grid_points,n_subspace_vectors));
-    g4_im = np.zeros((n_int_grid_points,n_subspace_vectors));
-    g1_ex = np.zeros((n_int_grid_points,n_subspace_vectors));
-    g2_ex = np.zeros((n_int_grid_points,n_subspace_vectors));
-    g3_ex = np.zeros((n_int_grid_points,n_subspace_vectors));
-    g4_ex = np.zeros((n_int_grid_points,n_subspace_vectors));
-    psi_k = np.zeros((n_int_grid_points,n_subspace_vectors));
-    psi_i_minus = np.zeros((n_int_grid_points,n_subspace_vectors));
-
-    #k=1
-    g1_ex = g_explicit(ti, psi_i);
-    
-    #k=2
-    psi_k = psi_i - dt/3.0*g1_ex;
-    g2_im = transposeop_13 @ psi_k;
-    psi_k -= dt/3.0*g2_im; 
-    g2_ex = g_explicit(ti - dt/3.0, psi_k);
-    
-    #k=3
-    psi_k = psi_i - dt/2.0*g2_im - dt*g2_ex;
-    g3_im = transposeop_12 @ psi_k;
-    psi_k -= dt/2.0*g3_im; 
-    g3_ex = g_explicit(ti - dt, psi_k);
-    
-    #k=4
-    psi_k = psi_i - dt*(3.0/4.0 * g2_im - 1.0/4.0 * g3_im) - dt*(3.0/4.0 * g2_ex + 1.0/4.0 * g3_ex);
-    g4_im = transposeop_12 @ psi_k;
-    psi_k -= dt/2.0*g4_im; 
-    g4_ex = g_explicit(ti - dt, psi_k);
-
-    psi_i_minus = psi_i -dt*( 3.0/4.0 * (g2_im + g2_ex) - 1.0/4.0 * (g3_im + g3_ex) + 1.0/2.0 * (g4_im + g4_ex)); 
-
-    return psi_i_minus;
-
-def rk4imex_adjoint(n_int_grid_points,n_subspace_vectors,psi_n_plus,un,L,N,L_adjoint,N_adjoint,I_minus_12L_inv, I_minus_13L_inv,I_minus_12Ladjoint_inv, I_minus_13Ladjoint_inv,dt):
+def rk4imex_adjoint(n_int_grid_points,n_subspace_vectors,psi_n_plus,un,L,N,L_adjoint,N_u_adjoint,I_minus_12L_inv, I_minus_13L_inv,I_minus_12Ladjoint_inv, I_minus_13Ladjoint_inv,jun_wn,dt):
     lambda_1 = np.zeros((n_int_grid_points,n_subspace_vectors));
     lambda_2 = np.zeros((n_int_grid_points,n_subspace_vectors));
     lambda_3 = np.zeros((n_int_grid_points,n_subspace_vectors));
     lambda_4 = np.zeros((n_int_grid_points,n_subspace_vectors));
-    u1 = np.zeros((n_int_grid_points,n_subspace_vectors));
-    u2 = np.zeros((n_int_grid_points,n_subspace_vectors));
-    u3 = np.zeros((n_int_grid_points,n_subspace_vectors));
-    u4 = np.zeros((n_int_grid_points,n_subspace_vectors));
+    u1 = np.zeros(n_int_grid_points);
+    u2 = np.zeros(n_int_grid_points);
+    u3 = np.zeros(n_int_grid_points);
+    u4 = np.zeros(n_int_grid_points);
     psi_n = np.zeros((n_int_grid_points,n_subspace_vectors));
     
     u1 = un;
@@ -329,42 +274,31 @@ def rk4imex_adjoint(n_int_grid_points,n_subspace_vectors,psi_n_plus,un,L,N,L_adj
     u3 = I_minus_12L_inv @ (un + dt/2.0*L(u2) + dt*N(u2));
     u4 = I_minus_12L_inv @ (un + dt*3.0/4.0*(L(u2)+N(u2)) + dt/4.0*(N(u3)-L(u3)));
 
+    lambda_4 = I_minus_12Ladjoint_inv @ (dt*L_adjoint(0.5*psi_n_plus,n_subspace_vectors) + dt*N_u_adjoint(u4,0.5*psi_n_plus,n_subspace_vectors));
+    lambda_3 = I_minus_12Ladjoint_inv @ (dt*L_adjoint(-0.25*psi_n_plus -0.25*lambda_4,n_subspace_vectors) + dt*N_u_adjoint(u3,-0.25*psi_n_plus + 0.25*lambda_4,n_subspace_vectors));
+    lambda_2 = I_minus_13Ladjoint_inv @ (dt*L_adjoint(0.75*psi_n_plus + 0.5*lambda_3 + 0.75*lambda_4,n_subspace_vectors) + dt*N_u_adjoint(u2,0.75*psi_n_plus + lambda_3 + 0.75*lambda_4,n_subspace_vectors));
+    lambda_1 = dt*N_u_adjoint(u1,1.0/3.0*lambda_2,n_subspace_vectors);
+    
+    psi_n = psi_n_plus + lambda_1 + lambda_2 + lambda_3 + lambda_4 + jun_wn*dt;
 
     return psi_n;
-
 
 def rk3(tn,n_int_grid_points,un,dt,f):
     c2 = 1.0/2.0; c3 = 3.0/4.0;
     b1 = 2.0/9.0; b2 = 1.0/3.0; b3 = 4.0/9.0;
     a21 = 1.0/2.0; a31 = 0.0; a32 = 3.0/4.0;
 
-    f1 = np.zeros(n_int_grid_points);
-    f2 = np.zeros(n_int_grid_points);
-    f3 = np.zeros(n_int_grid_points);
+    u1 = np.zeros(n_int_grid_points);
+    u2 = np.zeros(n_int_grid_points);
+    u3 = np.zeros(n_int_grid_points);
     un_plus = np.zeros(n_int_grid_points);
 
-    f1 = f(tn,n_int_grid_points,un);
-    f2 = f(tn + c2*dt, n_int_grid_points, un + dt*a21*f1);
-    f3 = f(tn + c3*dt, n_int_grid_points, un + dt*a31*f1 + dt*a32*f2);
+    u1 = un;
+    u2 = un + dt*a21*f(u1);
+    u3 = un + dt*a31*f(u1) + dt*a32*f(u2);
 
-    un_plus = un + dt*(b1*f1 + b2*f2 + b3*f3);
+    un_plus = un + dt*(b1*f(u1) + b2*f(u2) + b3*f(u3));
     return un_plus;
-
-def rk3_reverse(tn,n_int_grid_points,n_subspace_vectors,psi_n,dt,g):
-    c2 = 1.0/2.0; c3 = 3.0/4.0;
-    b1 = 2.0/9.0; b2 = 1.0/3.0; b3 = 4.0/9.0;
-    a21 = 1.0/2.0; a31 = 0.0; a32 = 3.0/4.0;
-    g1 = np.zeros((n_int_grid_points,n_subspace_vectors));
-    g2 = np.zeros((n_int_grid_points,n_subspace_vectors));
-    g3 = np.zeros((n_int_grid_points,n_subspace_vectors));
-    psi_n_minus = np.zeros((n_int_grid_points,n_subspace_vectors));
-
-    g1 = g(tn, psi_n);
-    g2 = g(tn - c2*dt, psi_n - dt*a21*g1);
-    g3 = g(tn - c3*dt, psi_n - dt*a31*g1 - dt*a32*g2);
-
-    psi_n_minus = psi_n - dt*(b1*g1 + b2*g2 + b3*g3);
-    return psi_n_minus;
 
 def rk3_adjoint(n_int_grid_points,n_subspace_vectors,psi_n_plus,un,dt,f,f_u, jun_wn): # Between n+1 to n. 
     c2 = 1.0/2.0; c3 = 3.0/4.0;
@@ -378,8 +312,8 @@ def rk3_adjoint(n_int_grid_points,n_subspace_vectors,psi_n_plus,un,dt,f,f_u, jun
     u3 = np.zeros(n_int_grid_points);
     psi_n = np.zeros((n_int_grid_points,n_subspace_vectors));
     u1 = un;
-    u2 = un + dt*a21*f(0,u1);
-    u3 = un + dt*(a31*f(0,u1) + a32*f(0,u2));
+    u2 = un + dt*a21*f(u1);
+    u3 = un + dt*(a31*f(u1) + a32*f(u2));
 
     lambda_3 = dt*f_u(u3,b3*psi_n_plus,n_subspace_vectors);
     lambda_2 = dt*f_u(u2, b2*psi_n_plus + a32*lambda_3, n_subspace_vectors);
