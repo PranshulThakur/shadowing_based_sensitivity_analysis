@@ -30,6 +30,18 @@ class AdjointMarch:
         self.Y_stored = np.zeros( (self.K,(self.nsteps+1),self.nstate,self.n_subspace_vectors));
         self.v_stored = np.zeros( (self.K,(self.nsteps+1),self.nstate));
         self.n_unstable = self.n_subspace_vectors;
+        self.w_simpson = np.zeros(m+1);
+        for i in range(m+1):
+            if i==0 or i==(m):
+                self.w_simpson[i] = 17.0/48.0;
+            elif i==1 or i==(m-1):
+                self.w_simpson[i] = 59.0/48.0;
+            elif i==2 or i==(m-2):
+                self.w_simpson[i] = 43.0/48.0;
+            elif i==3 or i==(m-3):
+                self.w_simpson[i] = 49.0/48.0;
+            else :
+                self.w_simpson[i] = 1.0;
 
     def compute_s0_initial(self,Q,v):
         '''
@@ -136,61 +148,44 @@ class AdjointMarch:
         u = self.u_stored[t_index,:];
         integrand = np.zeros((self.nsteps+1,self.n_subspace_vectors));
         integrand[self.nsteps,:] = Y.T @ self.solver.f_c(u);
+        jun_wn = np.zeros(self.nstate);
         for j in range(nsteps):
             t_index -= 1;
-            uj = self.u_stored[t_index,:];
-
-            Y = rk4imex_reverse(tj,self.nstate,self.n_subspace_vectors,Y,self.dt,self.adjoint_rhs_hom_explicit, self.solver.transposeop_13, self.solver.transposeop_12);
-            #Y = rk3_reverse(tj,self.nstate,self.n_subspace_vectors,Y,self.dt,self.adjoint_rhs_hom);
-            self.Y_stored[i,(self.nsteps-j-1),:,:] = Y;
-            tj_minus = tj-self.dt;
-            u = self.get_u_at_time_t(tj_minus);
-            '''
-            if j==(nsteps-1):
-                self.d[i,:] += 0.5*(Y.T @ self.solver.f_c(u));
-            else:
-                self.d[i,:] += Y.T @ self.solver.f_c(u);
-            '''
+            u = self.u_stored[t_index,:];
+            Y = rk4imex_adjoint(self.nstate,self.n_subspace_vectors,Y,u,self.solver.f_implicit,self.solver.f_explicit,f_u_transposed_adjoint_implicit,f_u_transposed_adjoint_explicit,self.solver.I_minus_12A_inv, self.solver.I_minus_13A_inv,self.solver.I_minus_12Aadjoint_inv, self.solver.I_minus_13Aadjoint_inv,jun_wn,self.dt):
+            #Y = rk3_adjoint(self.nstate,self.n_subspace_vectors,Y,u,self.dt,self.solver.f,self.solver.f_u_transposed_adjoint, jun_wn):
+            self.Y_stored[i-1,(self.nsteps-j-1),:,:] = Y;
             integrand[self.nsteps-j-1,:] = Y.T @ self.solver.f_c(u);
 
         for k in range(self.n_subspace_vectors):
-            self.d[i,k] = simpson_integration(integrand[:,k],self.nsteps,self.dt);
-            #self.d[i,k] = trapezoidal_integration(integrand[:,k],self.nsteps,self.dt);
+            self.d[i-1,k] = simpson_integration(integrand[:,k],self.nsteps,self.dt);
+            #self.d[i-1,k] = trapezoidal_integration(integrand[:,k],self.nsteps,self.dt);
         
-        '''
-        self.d[i,:] *=self.dt;
-        '''
         return Y;
     
-    def integrate_adjoint_nonhom(self,ti,nsteps,v_ti,i):
+    def integrate_adjoint_nonhom(self,nsteps,v_i,i): # Integrate from T_i to T_{i-1}
         v = np.zeros(self.nstate);
-        v = v_ti;
-        self.v_stored[i,nsteps,:] = v;
-        u = self.get_u_at_time_t(ti);
+        v = v_i;
+        self.v_stored[i-1,nsteps,:] = v;
+        t_index = i*nsteps;
+        u = self.u_stored[t_index,:];
         #self.h[i] = 0.5*(np.dot(v, self.solver.f_c(u)));
         integrand = np.zeros(self.nsteps+1);
         integrand[self.nsteps] = np.dot(v, self.solver.f_c(u));
+        jun_wn = np.zeros(self.nstate);
         for j in range(nsteps):
-            tj = -j*self.dt + ti;
-            v = rk4imex_reverse(tj,self.nstate,1,v,self.dt,self.adjoint_rhs_nonhom_explicit, self.solver.transposeop_13, self.solver.transposeop_12);
-            #v = rk3_reverse(tj,self.nstate,1,v,self.dt,self.adjoint_rhs_nonhom);
-            self.v_stored[i,nsteps-j-1,:] = v;
-            tj_minus = tj-self.dt;
-            u = self.get_u_at_time_t(tj_minus);
-            '''
-            if j==(nsteps-1):
-                self.h[i] += 0.5*(np.dot(v , self.solver.f_c(u)));
-            else:
-                self.h[i] += np.dot(v , self.solver.f_c(u));
-            '''
+            t_index -= 1;
+            u = self.u_stored[t_index,:];
+            jun_wn = self.functional_j_u(u)*self.w_simpson[t_index];
+            v = rk4imex_adjoint(self.nstate,1,v,u,self.solver.f_implicit,self.solver.f_explicit,f_u_transposed_adjoint_implicit,f_u_transposed_adjoint_explicit,self.solver.I_minus_12A_inv, self.solver.I_minus_13A_inv,self.solver.I_minus_12Aadjoint_inv, self.solver.I_minus_13Aadjoint_inv,jun_wn,self.dt):
+            #v = rk3_adjoint(self.nstate,1,v,u,self.dt,self.solver.f,self.solver.f_u_transposed_adjoint,jun_wn):
+            self.v_stored[i-1,nsteps-j-1,:] = v;
             integrand[self.nsteps-j-1] =  np.dot(v, self.solver.f_c(u));  
         
         
-        self.h[i] = simpson_integration(integrand,self.nsteps,self.dt);
-        #self.h[i] = trapezoidal_integration(integrand,self.nsteps,self.dt);
-        '''
-        self.h[i] *=self.dt;
-        '''
+        self.h[i-1] = simpson_integration(integrand,self.nsteps,self.dt);
+        #self.h[i-1] = trapezoidal_integration(integrand,self.nsteps,self.dt);
+        
         return v;
             
     def compute_Y_terminal(self,Y_random,terminal_time):
@@ -234,10 +229,10 @@ class AdjointMarch:
         for i in range(self.K):
             ival = self.K-i;
             Y = self.integrate_adjoint_hom(self.nsteps,Y,ival);
-            Q, self.R[ival,:,:] = scipy.linalg.qr(Y,mode='economic');
-            v = self.integrate_adjoint_nonhom(ti,self.nsteps,v,ival);
-            self.b[ival,:] = - (Q.T @ v);
-            v = v + (Q @ self.b[ival,:]);
+            Q, self.R[ival-1,:,:] = scipy.linalg.qr(Y,mode='economic');
+            v = self.integrate_adjoint_nonhom(self.nsteps,v,ival);
+            self.b[ival-1,:] = - (Q.T @ v);
+            v = v + (Q @ self.b[ival-1,:]);
             Y = Q;
         
         self.compute_s0_initial(Q,v);

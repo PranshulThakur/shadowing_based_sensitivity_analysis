@@ -300,7 +300,7 @@ def rk3(tn,n_int_grid_points,un,dt,f):
     un_plus = un + dt*(b1*f(u1) + b2*f(u2) + b3*f(u3));
     return un_plus;
 
-def rk3_adjoint(n_int_grid_points,n_subspace_vectors,psi_n_plus,un,dt,f,f_u, jun_wn): # Between n+1 to n. 
+def rk3_adjoint(n_int_grid_points,n_subspace_vectors,psi_n_plus,un,dt,f,f_u_adjoint, jun_wn): # Between n+1 to n. 
     c2 = 1.0/2.0; c3 = 3.0/4.0;
     b1 = 2.0/9.0; b2 = 1.0/3.0; b3 = 4.0/9.0;
     a21 = 1.0/2.0; a31 = 0.0; a32 = 3.0/4.0;
@@ -315,9 +315,9 @@ def rk3_adjoint(n_int_grid_points,n_subspace_vectors,psi_n_plus,un,dt,f,f_u, jun
     u2 = un + dt*a21*f(u1);
     u3 = un + dt*(a31*f(u1) + a32*f(u2));
 
-    lambda_3 = dt*f_u(u3,b3*psi_n_plus,n_subspace_vectors);
-    lambda_2 = dt*f_u(u2, b2*psi_n_plus + a32*lambda_3, n_subspace_vectors);
-    lambda_1 = dt*f_u(u1, b1*psi_n_plus + a21*lambda_2 + a31*lambda_3, n_subspace_vectors);
+    lambda_3 = dt*f_u_adjoint(u3,b3*psi_n_plus,n_subspace_vectors);
+    lambda_2 = dt*f_u_adjoint(u2, b2*psi_n_plus + a32*lambda_3, n_subspace_vectors);
+    lambda_1 = dt*f_u_adjoint(u1, b1*psi_n_plus + a21*lambda_2 + a31*lambda_3, n_subspace_vectors);
     psi_n = psi_n_plus + lambda_1 + lambda_2 + lambda_3 + jun_wn*dt;
     return psi_n;
     
