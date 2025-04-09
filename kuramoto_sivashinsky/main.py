@@ -27,7 +27,7 @@ def check_various_initial_conditions():
     for i in range(n_runs):
         u0_array[i,:] = np.random.uniform(-0.5,0.501,n_int_grid_points);
     
-    np.savetxt("u0_array.txt",u0_array);
+    np.savetxt("u0_array_explicit.txt",u0_array);
     for j in range(n_runs):
         print("sensitivity = ",compute_adjoint_sensitivity(T,dt,0,u0_array[j,:]));
 
@@ -37,7 +37,7 @@ def plot_primal_adjoint_solution_and_lyapunov_exponents():
     dt = 0.05;
     T = 100.0;
     delT = 5.0;
-    T_extra = 20.0;
+    T_extra = 50.0;
     check_equality(T/delT, round(T/delT));
     check_equality(delT/dt, round(delT/dt));
     check_equality(T_extra/delT, round(T_extra/delT));
@@ -51,9 +51,9 @@ def plot_primal_adjoint_solution_and_lyapunov_exponents():
         times_stored[i] = i*dt;
             
     n_int_grid_points = 127; #127, 255, 511
-    u0 = np.random.uniform(-0.5,0.501,n_int_grid_points);
-    #u0_array = np.load_txt("u0_array.txt");
-    #u0 = u0_array[j,:];
+    #u0 = np.random.uniform(-0.5,0.501,n_int_grid_points);
+    u0_array = np.loadtxt("u0_array.txt");
+    u0 = u0_array[1,:];
     ks_solver = KuramotoSivashinsky(dt,m_total,n_int_grid_points,0.0);
     functional_ks = FunctionalKS(m,n_int_grid_points);
     u_stored = ks_solver.compute_trajectory(u0);
@@ -193,7 +193,7 @@ def djbar_ds_vs_s():
     return 0;
 
 #check_various_initial_conditions();
-#plot_primal_adjoint_solution_and_lyapunov_exponents();
-djbar_ds_vs_T();
+plot_primal_adjoint_solution_and_lyapunov_exponents();
+#djbar_ds_vs_T();
 #djbar_ds_vs_s();
 #f_dot_adjoint_average_convergence_dt();

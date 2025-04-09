@@ -187,7 +187,13 @@ class AdjointMarch:
         #self.h[i-1] = trapezoidal_integration(integrand,self.nsteps,self.dt);
         
         return v;
-            
+    def get_R_min_abs_diag(self,R,k):
+        min_val = 10000.0;
+        for i in range(k):
+            if min_val > abs(R[i,i]):
+                min_val = abs(R[i,i]);
+        return min_val;
+
     def compute_Y_terminal(self,Y_random):
         m_total = round((self.T+self.T_extra)/self.dt);
         u = self.u_stored[m_total,:];
@@ -195,7 +201,8 @@ class AdjointMarch:
         Y_augmented = np.zeros((self.nstate,self.n_subspace_vectors+1));
         Y_augmented[:,0] = f;
         Y_augmented[:,1:]=Y_random;
-        Qt , R = scipy.linalg.qr(Y_augmented,mode='economic');
+        #Qt , Rt = scipy.linalg.qr(Y_augmented,mode='economic');
+        Qt , Rt = QR_decomposition(Y_augmented,self.nstate,self.n_subspace_vectors+1);
         Q = np.zeros((self.nstate,self.n_subspace_vectors));
         Q = Qt[:,1:];
         K_extra = round(self.T_extra/self.delT);
@@ -209,7 +216,8 @@ class AdjointMarch:
                 Q = rk4imex_adjoint(self.nstate,self.n_subspace_vectors,Q,u,self.solver.f_implicit,self.solver.f_explicit,self.solver.f_u_transposed_adjoint_implicit,self.solver.f_u_transposed_adjoint_explicit,self.solver.I_minus_12A_inv, self.solver.I_minus_13A_inv,self.solver.I_minus_12Aadjoint_inv, self.solver.I_minus_13Aadjoint_inv,jun_wn,self.dt);
                 #Q = rk3_adjoint(self.nstate,self.n_subspace_vectors,Q,u,self.dt,self.solver.f,self.solver.f_u_transposed_adjoint, jun_wn);
 
-            Q , R = scipy.linalg.qr(Q,mode='economic');
+            #Q , R = scipy.linalg.qr(Q,mode='economic');
+            Q , R = QR_decomposition(Q,self.nstate,self.n_subspace_vectors);
 
         return Q;
     
@@ -234,7 +242,9 @@ class AdjointMarch:
         for i in range(self.K):
             ival = self.K-i;
             Y = self.integrate_adjoint_hom(self.nsteps,Y,ival);
-            Q, self.R[ival-1,:,:] = scipy.linalg.qr(Y,mode='economic');
+            #Q, self.R[ival-1,:,:] = scipy.linalg.qr(Y,mode='economic');
+            Q, self.R[ival-1,:,:] = QR_decomposition(Y,self.nstate,self.n_subspace_vectors);
+            print("min R = ",self.get_R_min_abs_diag(self.R[ival-1,:,:],self.n_subspace_vectors));
             v = self.integrate_adjoint_nonhom(self.nsteps,v,ival);
             self.b[ival-1,:] = - (Q.T @ v);
             v = v + (Q @ self.b[ival-1,:]);
