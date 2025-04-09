@@ -60,10 +60,10 @@ plt.show();
 '''
 
 # Sensitivity - T plot
-T_array = np.loadtxt("T_array_djbar_ds_vs_T_runs255.txt");
-sensitivity_array = np.loadtxt("sensitivity_array_djbar_ds_vs_T_runs255.txt");
+T_array = np.loadtxt("T_array_djbar_ds_vs_T_runs.txt");
+sensitivity_array = np.loadtxt("sensitivity_array_djbar_ds_vs_T_runs.txt");
 n_runs=10;
-n_times=10;
+n_times=20;
 sensitivity_array_avg = np.zeros(n_times);
 for i in range(n_times):
     for j in range(n_runs):
@@ -82,7 +82,7 @@ three_sigma_lower = sensitivity_array_avg - sensitivity_array_std_dev;
 three_sigma_upper = sensitivity_array_avg + sensitivity_array_std_dev;
 plt.figure();
 for j in range(n_runs):
-    #plt.semilogx(T_array, sensitivity_array[:,j],'*',color='blue');
+    plt.semilogx(T_array, sensitivity_array[:,j],'*',color='blue');
     plt.semilogx(T_array, sensitivity_array_avg,'*',color='blue');
     
     #for i in range(n_times):
