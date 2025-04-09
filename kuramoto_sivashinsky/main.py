@@ -70,7 +70,7 @@ def plot_primal_adjoint_solution_and_lyapunov_exponents():
 
 def compute_adjoint_sensitivity(T, dt, s, u0, return_f_dot_adjoint_average=False): 
     delT = 5.0;
-    T_extra = 20.0;
+    T_extra = 50.0;
     check_equality(T/delT, round(T/delT));
     check_equality(delT/dt, round(delT/dt));
     check_equality(T_extra/delT, round(T_extra/delT));
@@ -84,7 +84,6 @@ def compute_adjoint_sensitivity(T, dt, s, u0, return_f_dot_adjoint_average=False
         times_stored[i] = i*dt;
             
     n_int_grid_points = 127; #127, 255, 511
-    #u0 = np.random.uniform(-0.5,0.501,n_int_grid_points);
     ks_solver = KuramotoSivashinsky(dt,m_total,n_int_grid_points,s);
     functional_ks = FunctionalKS(m,n_int_grid_points);
     u_stored = ks_solver.compute_trajectory(u0);
@@ -193,8 +192,8 @@ def djbar_ds_vs_s():
     np.savetxt('sensitivity_array_djbar_ds_vs_s_runs.txt', sensitivity_array);
     return 0;
 
-check_various_initial_conditions();
+#check_various_initial_conditions();
 #plot_primal_adjoint_solution_and_lyapunov_exponents();
-#djbar_ds_vs_T();
+djbar_ds_vs_T();
 #djbar_ds_vs_s();
 #f_dot_adjoint_average_convergence_dt();
