@@ -30,15 +30,15 @@ class AdjointMarch:
         self.Y_stored = np.zeros( (self.K,(self.nsteps+1),self.nstate,self.n_subspace_vectors));
         self.v_stored = np.zeros( (self.K,(self.nsteps+1),self.nstate));
         self.n_unstable = self.n_subspace_vectors;
-        self.w_simpson = np.zeros(m+1);
-        for i in range(m+1):
-            if i==0 or i==(m):
+        self.w_simpson = np.zeros(self.m+1);
+        for i in range(self.m+1):
+            if i==0 or i==(self.m):
                 self.w_simpson[i] = 17.0/48.0;
-            elif i==1 or i==(m-1):
+            elif i==1 or i==(self.m-1):
                 self.w_simpson[i] = 59.0/48.0;
-            elif i==2 or i==(m-2):
+            elif i==2 or i==(self.m-2):
                 self.w_simpson[i] = 43.0/48.0;
-            elif i==3 or i==(m-3):
+            elif i==3 or i==(self.m-3):
                 self.w_simpson[i] = 49.0/48.0;
             else :
                 self.w_simpson[i] = 1.0;
@@ -148,12 +148,12 @@ class AdjointMarch:
         u = self.u_stored[t_index,:];
         integrand = np.zeros((self.nsteps+1,self.n_subspace_vectors));
         integrand[self.nsteps,:] = Y.T @ self.solver.f_c(u);
-        jun_wn = np.zeros(self.nstate);
+        jun_wn = np.zeros((self.nstate,self.n_subspace_vectors));
         for j in range(nsteps):
             t_index -= 1;
             u = self.u_stored[t_index,:];
-            Y = rk4imex_adjoint(self.nstate,self.n_subspace_vectors,Y,u,self.solver.f_implicit,self.solver.f_explicit,f_u_transposed_adjoint_implicit,f_u_transposed_adjoint_explicit,self.solver.I_minus_12A_inv, self.solver.I_minus_13A_inv,self.solver.I_minus_12Aadjoint_inv, self.solver.I_minus_13Aadjoint_inv,jun_wn,self.dt):
-            #Y = rk3_adjoint(self.nstate,self.n_subspace_vectors,Y,u,self.dt,self.solver.f,self.solver.f_u_transposed_adjoint, jun_wn):
+            Y = rk4imex_adjoint(self.nstate,self.n_subspace_vectors,Y,u,self.solver.f_implicit,self.solver.f_explicit,self.solver.f_u_transposed_adjoint_implicit,self.solver.f_u_transposed_adjoint_explicit,self.solver.I_minus_12A_inv, self.solver.I_minus_13A_inv,self.solver.I_minus_12Aadjoint_inv, self.solver.I_minus_13Aadjoint_inv,jun_wn,self.dt);
+            #Y = rk3_adjoint(self.nstate,self.n_subspace_vectors,Y,u,self.dt,self.solver.f,self.solver.f_u_transposed_adjoint, jun_wn);
             self.Y_stored[i-1,(self.nsteps-j-1),:,:] = Y;
             integrand[self.nsteps-j-1,:] = Y.T @ self.solver.f_c(u);
 
@@ -176,9 +176,9 @@ class AdjointMarch:
         for j in range(nsteps):
             t_index -= 1;
             u = self.u_stored[t_index,:];
-            jun_wn = self.functional_j_u(u)*self.w_simpson[t_index];
-            v = rk4imex_adjoint(self.nstate,1,v,u,self.solver.f_implicit,self.solver.f_explicit,f_u_transposed_adjoint_implicit,f_u_transposed_adjoint_explicit,self.solver.I_minus_12A_inv, self.solver.I_minus_13A_inv,self.solver.I_minus_12Aadjoint_inv, self.solver.I_minus_13Aadjoint_inv,jun_wn,self.dt):
-            #v = rk3_adjoint(self.nstate,1,v,u,self.dt,self.solver.f,self.solver.f_u_transposed_adjoint,jun_wn):
+            jun_wn = self.functional.j_u(u)*self.w_simpson[t_index];
+            v = rk4imex_adjoint(self.nstate,1,v,u,self.solver.f_implicit,self.solver.f_explicit,self.solver.f_u_transposed_adjoint_implicit,self.solver.f_u_transposed_adjoint_explicit,self.solver.I_minus_12A_inv, self.solver.I_minus_13A_inv,self.solver.I_minus_12Aadjoint_inv, self.solver.I_minus_13Aadjoint_inv,jun_wn,self.dt);
+            #v = rk3_adjoint(self.nstate,1,v,u,self.dt,self.solver.f,self.solver.f_u_transposed_adjoint,jun_wn);
             self.v_stored[i-1,nsteps-j-1,:] = v;
             integrand[self.nsteps-j-1] =  np.dot(v, self.solver.f_c(u));  
         
@@ -188,9 +188,10 @@ class AdjointMarch:
         
         return v;
             
-    def compute_Y_terminal(self,Y_random,terminal_time):
-        u = self.get_u_at_time_t(terminal_time);
-        f = self.solver.f(terminal_time,self.nstate,u);
+    def compute_Y_terminal(self,Y_random):
+        m_total = round((self.T+self.T_extra)/self.dt);
+        u = self.u_stored[m_total,:];
+        f = self.solver.f(u);
         Y_augmented = np.zeros((self.nstate,self.n_subspace_vectors+1));
         Y_augmented[:,0] = f;
         Y_augmented[:,1:]=Y_random;
@@ -198,20 +199,24 @@ class AdjointMarch:
         Q = np.zeros((self.nstate,self.n_subspace_vectors));
         Q = Qt[:,1:];
         K_extra = round(self.T_extra/self.delT);
+        jun_wn = np.zeros((self.nstate,self.n_subspace_vectors));
         for i in range(K_extra):
-            ti = self.T+self.T_extra - i*self.delT;
+            ival = self.K + K_extra - i;
+            t_index = ival*self.nsteps;
             for j in range(self.nsteps):
-                tj = ti - j*self.dt;
-                Q = rk4imex_reverse(tj,self.nstate,self.n_subspace_vectors,Q,self.dt,self.adjoint_rhs_hom_explicit, self.solver.transposeop_13, self.solver.transposeop_12);
-                #Q = rk3_reverse(tj,self.nstate,self.n_subspace_vectors,Q,self.dt,self.adjoint_rhs_hom);
+                t_index -= 1;
+                u = self.u_stored[t_index,:];
+                Q = rk4imex_adjoint(self.nstate,self.n_subspace_vectors,Q,u,self.solver.f_implicit,self.solver.f_explicit,self.solver.f_u_transposed_adjoint_implicit,self.solver.f_u_transposed_adjoint_explicit,self.solver.I_minus_12A_inv, self.solver.I_minus_13A_inv,self.solver.I_minus_12Aadjoint_inv, self.solver.I_minus_13Aadjoint_inv,jun_wn,self.dt);
+                #Q = rk3_adjoint(self.nstate,self.n_subspace_vectors,Q,u,self.dt,self.solver.f,self.solver.f_u_transposed_adjoint, jun_wn);
 
             Q , R = scipy.linalg.qr(Q,mode='economic');
 
         return Q;
     
-    def compute_v_terminal(self,terminal_time):
-        u = self.get_u_at_time_t(terminal_time);
-        f = self.solver.f(terminal_time,self.nstate,u);
+    def compute_v_terminal(self):
+        m_total = round((self.T+self.T_extra)/self.dt);
+        u = self.u_stored[m_total,:];
+        f = self.solver.f(u);
         j = self.functional.j_val(u);
         f_norm_squared = np.dot(f,f);
         v_terminal = np.zeros(self.nstate);
@@ -223,9 +228,9 @@ class AdjointMarch:
         Q_init = np.zeros((self.nstate,self.n_subspace_vectors));
         for i in range(self.n_subspace_vectors):
             Q_init[i,i] = 1.0;
-        #Y = self.compute_Y_terminal(np.random.rand( self.nstate, self.n_subspace_vectors ), self.T+self.T_extra);
-        Y = self.compute_Y_terminal(Q_init, self.T+self.T_extra);
-        v = self.compute_v_terminal(self.T);
+        #Y = self.compute_Y_terminal(np.random.rand( self.nstate, self.n_subspace_vectors ));
+        Y = self.compute_Y_terminal(Q_init);
+        v = self.compute_v_terminal();
         for i in range(self.K):
             ival = self.K-i;
             Y = self.integrate_adjoint_hom(self.nsteps,Y,ival);
@@ -306,8 +311,8 @@ class AdjointMarch:
                 km = m - (self.K-iK)*self.nsteps - (self.nsteps-jval);
                 adjoint_vec[km,:] = (self.Y_stored[ival,jval,:,:] @ self.s[ival,:]) + self.v_stored[ival,jval,:];
                 time_vec[km] = km*self.dt;
-                u = self.get_u_at_time_t(time_vec[km]);
-                f = self.solver.f(time_vec[km],self.nstate,u);
+                u = self.u_stored[km,:];
+                f = self.solver.f(u);
                 f_dot_adjoint[km] = np.dot(f,adjoint_vec[km,:]);
         
         #integrate f_dot_adjoint
@@ -345,8 +350,8 @@ class AdjointMarch:
                 km = m - (self.K-iK)*self.nsteps - (self.nsteps-jval);
                 adjoint_vec[km,:] = (self.Y_stored[ival,jval,:,:] @ self.s[ival,:]) + self.v_stored[ival,jval,:];
                 time_vec[km] = km*self.dt;
-                u = self.get_u_at_time_t(time_vec[km]);
-                f = self.solver.f(time_vec[km],self.nstate,u);
+                u = self.u_stored[km,:];
+                f = self.solver.f(u);
                 f_dot_adjoint[km] = np.dot(f,adjoint_vec[km,:]);
         
         #integrate f_dot_adjoint

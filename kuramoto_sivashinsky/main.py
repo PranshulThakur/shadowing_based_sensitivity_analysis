@@ -12,13 +12,34 @@ def check_equality(num1, num2):
         sys.exit("num1 is not equal to num2. Equality check has failed. Aborting...");
     
     return 0;
+
+def check_various_initial_conditions():
+    T = 100.0;
+    dt = 0.05;
+    delT = 5.0;
+    T_extra=50.0;
+    check_equality(T/delT, round(T/delT));
+    check_equality(delT/dt, round(delT/dt));
+    check_equality(T_extra/delT, round(T_extra/delT));
+    n_runs=10;
+    n_int_grid_points=127;
+    u0_array = np.zeros((n_runs,n_int_grid_points));
+    for i in range(n_runs):
+        u0_array[i,:] = np.random.uniform(-0.5,0.501,n_int_grid_points);
     
+    np.savetxt("u0_array.txt",u0_array);
+    for j in range(n_runs):
+        print("sensitivity = ",compute_adjoint_sensitivity(T,dt,0,u0_array[j,:]));
+
+    return 0;
+
 def plot_primal_adjoint_solution_and_lyapunov_exponents():
     dt = 0.05;
-    T = 500.0;
-    delT = 10.0;
-    check_equality(T/delT, round(T/delT));
+    T = 100.0;
+    delT = 5.0;
     T_extra = 20.0;
+    check_equality(T/delT, round(T/delT));
+    check_equality(delT/dt, round(delT/dt));
     check_equality(T_extra/delT, round(T_extra/delT));
     T_total = T + T_extra;
     m = round(T/dt);
@@ -29,9 +50,10 @@ def plot_primal_adjoint_solution_and_lyapunov_exponents():
     for i in range(m_total+1):
         times_stored[i] = i*dt;
             
-    n_int_grid_points = 255; #127, 255, 511
-    #u0 = np.random.rand(n_int_grid_points);
+    n_int_grid_points = 127; #127, 255, 511
     u0 = np.random.uniform(-0.5,0.501,n_int_grid_points);
+    #u0_array = np.load_txt("u0_array.txt");
+    #u0 = u0_array[j,:];
     ks_solver = KuramotoSivashinsky(dt,m_total,n_int_grid_points,0.0);
     functional_ks = FunctionalKS(m,n_int_grid_points);
     u_stored = ks_solver.compute_trajectory(u0);
@@ -46,10 +68,11 @@ def plot_primal_adjoint_solution_and_lyapunov_exponents():
     return 0;
 
 
-def compute_adjoint_sensitivity(T, dt, s,u0, return_f_dot_adjoint_average=False): 
+def compute_adjoint_sensitivity(T, dt, s, u0, return_f_dot_adjoint_average=False): 
     delT = 5.0;
-    check_equality(T/delT, round(T/delT));
     T_extra = 20.0;
+    check_equality(T/delT, round(T/delT));
+    check_equality(delT/dt, round(delT/dt));
     check_equality(T_extra/delT, round(T_extra/delT));
     T_total = T + T_extra;
     m = round(T/dt);
@@ -170,7 +193,8 @@ def djbar_ds_vs_s():
     np.savetxt('sensitivity_array_djbar_ds_vs_s_runs.txt', sensitivity_array);
     return 0;
 
+check_various_initial_conditions();
 #plot_primal_adjoint_solution_and_lyapunov_exponents();
-djbar_ds_vs_T();
+#djbar_ds_vs_T();
 #djbar_ds_vs_s();
 #f_dot_adjoint_average_convergence_dt();

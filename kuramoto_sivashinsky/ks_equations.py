@@ -24,10 +24,10 @@ class KuramotoSivashinsky:
         
         self.A = sparse.csr_matrix(A);
         self.A_transposed = self.A.transpose().tocsr();
-        self.I_minus_12A_inv =  sparse.csr_matrix(np.linalg.inv(I - dt/2.0*A)); 
-        self.I_minus_13A_inv =  sparse.csr_matrix(np.linalg.inv(I - dt/3.0*A)); 
-        self.I_minus_12Aadjoint_inv =  sparse.csr_matrix(np.linalg.inv(I - dt/2.0*A_transposed)); 
-        self.I_minus_13Aadjoint_inv =  sparse.csr_matrix(np.linalg.inv(I - dt/3.0*A_transposed)); 
+        self.I_minus_12A_inv =  sparse.csr_matrix(np.linalg.inv(I - dt/2.0*self.A)); 
+        self.I_minus_13A_inv =  sparse.csr_matrix(np.linalg.inv(I - dt/3.0*self.A)); 
+        self.I_minus_12Aadjoint_inv =  sparse.csr_matrix(np.linalg.inv(I - dt/2.0*self.A_transposed)); 
+        self.I_minus_13Aadjoint_inv =  sparse.csr_matrix(np.linalg.inv(I - dt/3.0*self.A_transposed)); 
 
     def update_spacetime_grid(self, n_int_grid_points_in, dt_in, T_in):
         self.dt = dt_in;
@@ -36,7 +36,7 @@ class KuramotoSivashinsky:
         self.m_time_steps = round(T_in/self.dt);
 
     def f_explicit(self,u):
-        f_val = np.zeros(len(u));
+        f_val = np.zeros(self.n_int_grid_points);
         u_plus1 = 0.0;
         u_minus1 = 0.0;
         u_plus2 = 0.0;
@@ -120,7 +120,7 @@ class KuramotoSivashinsky:
         return f_val;
     
     def f_u(self,u):
-        jac = np.zeros((len(u),len(u)));
+        jac = np.zeros((self.n_int_grid_points,self.n_int_grid_points));
         for i in range(self.n_int_grid_points):
             jaray = np.linspace(i-2,i+2,5,dtype=int);
             for j in jaray:
@@ -235,7 +235,7 @@ class KuramotoSivashinsky:
         return val;
 
     def f_c(self,u): 
-        df_dc = np.zeros(len(u));
+        df_dc = np.zeros(self.n_int_grid_points);
         u_plus1 = 0.0;
         u_minus1 = 0.0;
         for i in range(self.n_int_grid_points):
@@ -268,7 +268,7 @@ class KuramotoSivashinsky:
         u[0,:] = u0;
         for i in range(self.m_time_steps):
             ti = i*self.dt;
-            u[i+1,:] = rk4imex(self.n_int_grid_points,u[i,:],self.f_implicit,self.f_explicit,self.I_minus_12A_inv,self.I_minus_13A_inv,self.dt):    
+            u[i+1,:] = rk4imex(self.n_int_grid_points,u[i,:],self.f_implicit,self.f_explicit,self.I_minus_12A_inv,self.I_minus_13A_inv,self.dt);    
             #u[i+1,:] = rk3(ti,self.n_int_grid_points,u[i,:],self.dt,self.f);
         
         return u;
