@@ -207,6 +207,9 @@ class AdjointMarch:
         Q = Qt[:,1:];
         K_extra = round(self.T_extra/self.delT);
         jun_wn = np.zeros((self.nstate,self.n_subspace_vectors));
+        lyapunov_exp_stored = np.zeros( (K_extra,self.n_subspace_vectors));
+        times_stored = np.zeros(K_extra);
+        lyapunov_exp_sum = np.zeros(self.n_subspace_vectors);
         for i in range(K_extra):
             ival = self.K + K_extra - i;
             t_index = ival*self.nsteps;
@@ -218,6 +221,18 @@ class AdjointMarch:
 
             #Q , R = scipy.linalg.qr(Q,mode='economic');
             Q , R = QR_decomposition(Q,self.nstate,self.n_subspace_vectors);
+            ival-=1;
+            times_stored[ival-self.K] = ival*self.delT;
+            for j in range(self.n_subspace_vectors):
+                lyapunov_exp_sum[j]+= np.log(abs(R[j,j]));
+                lyapunov_exp_stored[ival-self.K,j] = lyapunov_exp_sum[j]/((i+1.0)*self.delT); 
+        
+        import matplotlib.pyplot as plt;
+        plt.plot(times_stored,lyapunov_exp_stored);
+        plt.xlabel("t");
+        plt.ylabel("Lyapunov exponents");
+        plt.savefig('lyapunov_exponents.eps', format='eps');
+        plt.show();
 
         return Q;
     
@@ -384,14 +399,14 @@ class AdjointMarch:
 
         import matplotlib.pyplot as plt;
         x_array, times_array = np.meshgrid(x_vals,time_vec);
-        plt.figure();
-        #contourplot = plt.contourf(x_array, times_array, adjoint_vec, 50,cmap='jet');
-        contourplot = plt.contourf(x_array, times_array, adjoint_vec, levels=50,cmap='terrain');
-        cbar = plt.colorbar(contourplot);
+
+        fig = plt.figure();
+        contourplot = plt.contourf(x_array, times_array, adjoint_vec, levels=1000,cmap='terrain',norm = "symlog");
         plt.axis('equal');
         plt.axis('scaled');
         plt.xlabel("x");
         plt.ylabel("t");
+        fig.colorbar(contourplot,pad=0.15,label=r'$\psi$');
         plt.savefig('adjoint_ks.png', format='png');
         plt.show();
 
