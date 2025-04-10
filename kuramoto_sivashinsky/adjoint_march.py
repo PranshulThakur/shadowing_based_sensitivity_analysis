@@ -194,6 +194,15 @@ class AdjointMarch:
                 min_val = abs(R[i,i]);
         return min_val;
 
+    def get_dimension_of_unstable_subspace(self,lyapunov_exponents_vector):
+        unstable_dimension = 0;
+        for i in range(len(lyapunov_exponents_vector)):
+            if(lyapunov_exponents_vector[i]>0):
+                unstable_dimension +=1;
+            else:
+                break;
+        return unstable_dimension;
+
     def compute_Y_terminal(self,Y_random):
         m_total = round((self.T+self.T_extra)/self.dt);
         u = self.u_stored[m_total,:];
@@ -299,6 +308,7 @@ class AdjointMarch:
             for j in range(self.n_subspace_vectors):
                 lyapunov_exp[j] += np.log(np.abs(self.R[ival,j,j]));
                 lyapunov_exp_stored[ival,j] = lyapunov_exp[j]/( (i+1.0)*self.delT);
+            print("Dimension of unstable subspace = ",self.get_dimension_of_unstable_subspace(lyapunov_exp_stored[ival,:]),"  t = ",times_stored[ival]);
 
         lyapunov_exp /= self.T;
 
@@ -355,6 +365,7 @@ class AdjointMarch:
     def plot_adjoint_solution(self):
         m = round(self.T/self.dt);
         adjoint_vec = np.zeros((m+1,self.nstate));
+        adjoint_norm = np.zeros(m+1);
         f_dot_adjoint = np.zeros(m+1);
         time_vec = np.zeros(m+1);
         for i in range(self.K):
@@ -375,6 +386,7 @@ class AdjointMarch:
                 km = m - (self.K-iK)*self.nsteps - (self.nsteps-jval);
                 adjoint_vec[km,:] = (self.Y_stored[ival,jval,:,:] @ self.s[ival,:]) + self.v_stored[ival,jval,:];
                 time_vec[km] = km*self.dt;
+                adjoint_norm[km] = np.sqrt(np.dot(adjoint_vec[km,:],adjoint_vec[km,:]));
                 u = self.u_stored[km,:];
                 f = self.solver.f(u);
                 f_dot_adjoint[km] = np.dot(f,adjoint_vec[km,:]);
@@ -413,6 +425,12 @@ class AdjointMarch:
         np.savetxt("xarray_adjoint.txt",x_array);
         np.savetxt("timesarray_adjoint.txt",times_array);
         np.savetxt("adjoint_vec.txt",adjoint_vec);
+        
+        fig = plt.figure();
+        plt.plot(time_vec, adjoint_norm,"-*");
+        plt.xlabel("t",fontsize=12);
+        plt.ylabel("Norm of adjoint",fontsize=12);
+        plt.show();
         
         return 0;
 

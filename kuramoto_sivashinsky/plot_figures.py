@@ -95,7 +95,7 @@ for j in range(n_runs):
 plt.fill_between(T_array,three_sigma_lower, three_sigma_upper,alpha=0.3,color="blue");
 plt.xlabel('T',fontsize=12);
 plt.ylabel(r"$d\bar{J}/ds$",fontsize=12);
-plt.ylim([-1.5,0.0]);
+#plt.ylim([-1.5,0.0]);
 plt.savefig("djds_vs_T_ks.pdf",format="pdf");
 plt.show();
 
