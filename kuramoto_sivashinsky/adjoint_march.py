@@ -230,19 +230,19 @@ class AdjointMarch:
 
             #Q , R = scipy.linalg.qr(Q,mode='economic');
             Q , R = QR_decomposition(Q,self.nstate,self.n_subspace_vectors);
-            ival-=1;
-            times_stored[ival-self.K] = ival*self.delT;
-            for j in range(self.n_subspace_vectors):
-                lyapunov_exp_sum[j]+= np.log(abs(R[j,j]));
-                lyapunov_exp_stored[ival-self.K,j] = lyapunov_exp_sum[j]/((i+1.0)*self.delT); 
-        
+            #ival-=1;
+            #times_stored[ival-self.K] = ival*self.delT;
+            #for j in range(self.n_subspace_vectors):
+            #    lyapunov_exp_sum[j]+= np.log(abs(R[j,j]));
+            #    lyapunov_exp_stored[ival-self.K,j] = lyapunov_exp_sum[j]/((i+1.0)*self.delT); 
+        '''
         import matplotlib.pyplot as plt;
         plt.plot(times_stored,lyapunov_exp_stored);
         plt.xlabel("t");
         plt.ylabel("Lyapunov exponents");
         plt.savefig('lyapunov_exponents.eps', format='eps');
         plt.show();
-
+        '''
         return Q;
     
     def compute_v_terminal(self):
