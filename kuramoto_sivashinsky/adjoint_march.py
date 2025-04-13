@@ -268,7 +268,7 @@ class AdjointMarch:
             Y = self.integrate_adjoint_hom(self.nsteps,Y,ival);
             #Q, self.R[ival-1,:,:] = scipy.linalg.qr(Y,mode='economic');
             Q, self.R[ival-1,:,:] = QR_decomposition(Y,self.nstate,self.n_subspace_vectors);
-            print("min R = ",self.get_R_min_abs_diag(self.R[ival-1,:,:],self.n_subspace_vectors));
+            #print("min R = ",self.get_R_min_abs_diag(self.R[ival-1,:,:],self.n_subspace_vectors));
             v = self.integrate_adjoint_nonhom(self.nsteps,v,ival);
             self.b[ival-1,:] = - (Q.T @ v);
             v = v + (Q @ self.b[ival-1,:]);
