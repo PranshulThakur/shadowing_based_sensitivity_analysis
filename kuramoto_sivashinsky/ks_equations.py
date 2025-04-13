@@ -16,18 +16,17 @@ class KuramotoSivashinsky:
         I = np.zeros((n_int_grid_points,n_int_grid_points));
         for i in range(self.n_int_grid_points):
             I[i,i]=1.0;
-            jaray = np.linspace(i-2,i+2,5,dtype=int);
-            for j in jaray:
+            for j in range(i-2,i+3):
                 if j>=0 and j<=(self.n_int_grid_points-1):
                     A[i,j] = - self.d2udx2_du(i,j) - self.d4udx4_du(i,j);
             
-        
-        self.A = sparse.csr_matrix(A);
-        self.A_transposed = self.A.transpose().tocsr();
-        self.I_minus_12A_inv =  sparse.csr_matrix(np.linalg.inv(I - dt/2.0*self.A)); 
-        self.I_minus_13A_inv =  sparse.csr_matrix(np.linalg.inv(I - dt/3.0*self.A)); 
-        self.I_minus_12Aadjoint_inv =  sparse.csr_matrix(np.linalg.inv(I - dt/2.0*self.A_transposed)); 
-        self.I_minus_13Aadjoint_inv =  sparse.csr_matrix(np.linalg.inv(I - dt/3.0*self.A_transposed)); 
+        self.I=I; 
+        self.A = sparse.csr_matrix(A,copy=True);
+        self.A_transposed = self.A.transpose().tocsr(copy=True);
+        self.I_minus_12A_inv =  sparse.csr_matrix(np.linalg.inv(I - dt/2.0*self.A),copy=True); 
+        self.I_minus_13A_inv =  sparse.csr_matrix(np.linalg.inv(I - dt/3.0*self.A),copy=True); 
+        self.I_minus_12Aadjoint_inv =  sparse.csr_matrix(np.linalg.inv(I - dt/2.0*self.A_transposed),copy=True); 
+        self.I_minus_13Aadjoint_inv =  sparse.csr_matrix(np.linalg.inv(I - dt/3.0*self.A_transposed),copy=True); 
 
     def update_spacetime_grid(self, n_int_grid_points_in, dt_in, T_in):
         self.dt = dt_in;

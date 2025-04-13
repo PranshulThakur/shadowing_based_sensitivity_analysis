@@ -58,7 +58,7 @@ class FunctionalKS:
         '''
         integrand = np.zeros(self.m_time_steps+1);
         for i in range(self.m_time_steps+1):
-            integrand[i] = self.j_val(u[i]);
+            integrand[i] = self.j_val(u[i,:]);
 
         javg = simpson_integration(integrand,self.m_time_steps,1);
         #javg = trapezoidal_integration(integrand,self.m_time_steps,1);
@@ -76,7 +76,7 @@ class FunctionalKS:
 
         integrand = np.zeros(self.m_time_steps+1);
         for i in range(self.m_time_steps+1):
-            integrand[i] = self.j_s(u[i]);
+            integrand[i] = self.j_s(u[i,:]);
 
         js_avg = simpson_integration(integrand,self.m_time_steps,1);
         #js_avg = trapezoidal_integration(integrand,self.m_time_steps,1);

@@ -58,7 +58,7 @@ class AdjointMarch:
         return 0;
 
     def compute_sensitivity(self):
-        self.compute_dimension_of_the_unstable_subspaces();
+        self.compute_dimension_of_the_unstable_subspace();
         self.compute_s_backward_intermediate_march();
         self.compute_s_forwardmarch();
         sensitivity_val = 0.0;
@@ -71,7 +71,7 @@ class AdjointMarch:
 
         return sensitivity_val;
 
-    def solve_triangular(self,A,x,rhs,m):
+    def solve_triangular(self,A,x,rhs,m): # A is upper triangular, mxm.
         for i in range(m-1,-1,-1):
             sumval = 0.0;
             for j in range(i+1,m):
@@ -88,11 +88,12 @@ class AdjointMarch:
         return 0;
         
 
-
     def compute_s_backward_intermediate_march(self):
         stable_range = slice(self.n_unstable,self.n_subspace_vectors);
         n_stable = self.n_subspace_vectors - self.n_unstable;
         for i in range(self.K-1,-1,-1):
+            if i==(self.K-1):
+                self.s[i,stable_range]*=0;
             if i>0:
                 self.multiply_triangular(self.R[i,stable_range,stable_range],self.s[i,stable_range],self.s[i-1,stable_range], n_stable);
                 self.s[i-1,stable_range] -= self.b[i,stable_range];
@@ -140,7 +141,7 @@ class AdjointMarch:
         dpsi_dt = -self.solver.f_u_transposed_adjoint(u,adjoint_n,1) - j_u;
         return dpsi_dt;
 
-    def integrate_adjoint_hom(self,nsteps,Y_i,i):
+    def integrate_adjoint_hom(self,nsteps,Y_i,i): # From T_i to T_{i-1}
         Y = np.zeros((self.nstate,self.n_subspace_vectors));
         Y = Y_i;
         self.Y_stored[i-1,self.nsteps,:,:] = Y;
@@ -169,7 +170,6 @@ class AdjointMarch:
         self.v_stored[i-1,nsteps,:] = v;
         t_index = i*nsteps;
         u = self.u_stored[t_index,:];
-        #self.h[i] = 0.5*(np.dot(v, self.solver.f_c(u)));
         integrand = np.zeros(self.nsteps+1);
         integrand[self.nsteps] = np.dot(v, self.solver.f_c(u));
         jun_wn = np.zeros(self.nstate);
@@ -246,8 +246,8 @@ class AdjointMarch:
         return Q;
     
     def compute_v_terminal(self):
-        m_total = round((self.T+self.T_extra)/self.dt);
-        u = self.u_stored[m_total,:];
+        m = round(self.T/self.dt);
+        u = self.u_stored[m,:];
         f = self.solver.f(u);
         j = self.functional.j_val(u);
         f_norm_squared = np.dot(f,f);
@@ -278,7 +278,7 @@ class AdjointMarch:
         
         return 0;
 
-    def compute_dimension_of_the_unstable_subspaces(self):
+    def compute_dimension_of_the_unstable_subspace(self):
         lyapunov_exp = np.zeros(self.n_subspace_vectors);
         for i in range(self.K):
             ival = self.K-i-1;
