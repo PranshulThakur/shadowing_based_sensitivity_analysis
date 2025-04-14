@@ -79,6 +79,7 @@ class KuramotoSivashinsky:
         return f_val;
 
     def f(self,u):
+        '''
         f_val = np.zeros(self.n_int_grid_points);
         u_plus1 = 0.0;
         u_minus1 = 0.0;
@@ -116,7 +117,8 @@ class KuramotoSivashinsky:
             d2udx2 = (u_plus1 - 2.0*u[i] + u_minus1)/(self.dx**2);
             d4udx4 = (u_minus2 - 4.0*u_minus1 + 6.0*u[i] -4.0*u_plus1 + u_plus2)/(self.dx**4);
             f_val[i] = -(ududx + self.c*dudx + d2udx2 + d4udx4);
-        
+        '''
+        f_val = self.f_implicit(u) + self.f_explicit(u);
         return f_val;
     
     def f_u(self,u):
@@ -156,6 +158,7 @@ class KuramotoSivashinsky:
         return fu_T_adjoint;
     
     def f_u_transposed_adjoint(self,u,psi,n_subspace_vectors):
+        '''
         if n_subspace_vectors==1:
             fu_T_adjoint = np.zeros(self.n_int_grid_points);
         else :
@@ -187,8 +190,8 @@ class KuramotoSivashinsky:
                 fu_T_adjoint[i] += (psi[i+1] - psi[i-1])*self.c/(2.0*self.dx);
                 fu_T_adjoint[i] += -1.0/(self.dx**2) * (psi[i-1] -2.0*psi[i] + psi[i+1]);
                 fu_T_adjoint[i] += -1.0/(self.dx**4) * (psi[i-2] -4.0*psi[i-1] + 6.0*psi[i] - 4.0*psi[i+1] + psi[i+2]);
-        
-        #fu_T_adjoint = self.f_u_transposed_adjoint_implicit(psi,n_subspace_vectors) + self.f_u_transposed_adjoint_explicit(u,psi,n_subspace_vectors);
+        '''
+        fu_T_adjoint = self.f_u_transposed_adjoint_implicit(psi,n_subspace_vectors) + self.f_u_transposed_adjoint_explicit(u,psi,n_subspace_vectors);
         return fu_T_adjoint;
                  
     def dudx_du(self,i,j):
