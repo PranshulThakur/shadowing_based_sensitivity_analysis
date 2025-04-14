@@ -1,65 +1,6 @@
 #! /usr/bin/env python
 #
 import numpy as np
-def rk4 ( t0, u0, dt, f ):
-
-#*****************************************************************************80
-#
-## RK4 takes one Runge-Kutta step.
-#
-#  Discussion:
-#
-#    It is assumed that an initial value problem, of the form
-#
-#      du/dt = f ( t, u )
-#      u(t0) = u0
-#
-#    is being solved.
-#
-#    If the user can supply current values of t, u, a stepsize dt, and a
-#    function to evaluate the derivative, this function can compute the
-#    fourth-order Runge Kutta estimate to the solution at time t+dt.
-#
-#  Licensing:
-#
-#    This code is distributed under the GNU LGPL license. 
-#
-#  Modified:
-#
-#    18 August 2016
-#
-#  Author:
-#
-#    John Burkardt
-#
-#  Parameters:
-#
-#    Input, real T0, the current time.
-#
-#    Input, real U0, the solution estimate at the current time.
-#
-#    Input, real DT, the time step.
-#
-#    Input, function value = F ( T, U ), a function which evaluates
-#    the derivative, or right hand side of the problem.
-#
-#    Output, real U1, the fourth-order Runge-Kutta solution estimate
-#    at time T0+DT.
-#
-
-#
-#  Get four sample values of the derivative.
-#
-  f1 = f ( t0,            u0 )
-  f2 = f ( t0 + dt / 2.0, u0 + dt * f1 / 2.0 )
-  f3 = f ( t0 + dt / 2.0, u0 + dt * f2 / 2.0 )
-  f4 = f ( t0 + dt,       u0 + dt * f3 )
-#
-#  Combine them to estimate the solution U1 at time T1 = T0 + DT.
-#
-  u1 = u0 + dt * ( f1 + 2.0 * f2 + 2.0 * f3 + f4 ) / 6.0
-
-  return u1
 
 def rk4_test ( ):
 
@@ -282,6 +223,69 @@ def rk4imex_adjoint(n_int_grid_points,n_subspace_vectors,psi_n_plus,un,L,N,L_adj
     psi_n = psi_n_plus + lambda_1 + lambda_2 + lambda_3 + lambda_4 + jun_wn*dt;
 
     return psi_n;
+
+def rk4(n_int_grid_points,un,dt,f):
+    s = 4;
+    A = np.zeros((s,s));
+    b = np.zeros(s);
+    b[0] = 1.0/6.0; b[1] = 1.0/3.0; b[2] = 1.0/3.0; b[3] = 1.0/6.0;
+    A[1,0] = 1.0/2.0; A[2,1] = 1.0/2.0; A[3,2] = 1.0;
+
+    Y = np.zeros((s,n_int_grid_points));
+    un_plus = np.zeros(n_int_grid_points);
+
+    # Compute Y_i
+    for i in range(s):
+        Y[i,:] = un;
+        for j in range(0,i):
+            if A[i,j] != 0.0:
+                Y[i,:] += dt*A[i,j]*f(Y[j,:]);
+
+    # compute un_plus
+    un_plus = un;
+    for i in range(s):
+        un_plus += dt*b[i]*f(Y[i,:]);
+
+    return un_plus;
+
+def rk4_adjoint(n_int_grid_points,n_subspace_vectors,psi_n_plus,un,dt,f,f_u_adjoint, jun_wn): # Between n+1 to n. 
+    s = 4;
+    A = np.zeros((s,s));
+    b = np.zeros(s);
+    b[0] = 1.0/6.0; b[1] = 1.0/3.0; b[2] = 1.0/3.0; b[3] = 1.0/6.0;
+    A[1,0] = 1.0/2.0; A[2,1] = 1.0/2.0; A[3,2] = 1.0;
+    
+    Y = np.zeros((s,n_int_grid_points));
+    # Compute Y_i
+    for i in range(s):
+        Y[i,:] = un;
+        for j in range(0,i):
+            if A[i,j] != 0.0:
+                Y[i,:] += dt*A[i,j]*f(Y[j,:]);
+
+    lambda_ = np.zeros((s,n_int_grid_points,n_subspace_vectors));
+    sum_interm = np.zeros((n_int_grid_points,n_subspace_vectors));
+    if n_subspace_vectors==1:
+        sum_interm  = np.zeros(n_int_grid_points);
+        lambda_ = np.zeros((s,n_int_grid_points));
+
+    for k in range(s-1,-1,-1):
+        sum_interm *= 0.0;
+        sum_interm += b[k]*psi_n_plus;
+        for i in range(k+1,s):
+            if A[i,k] != 0.0:
+                sum_interm += A[i,k]*lambda_[i];
+
+        lambda_[k] = dt*f_u_adjoint(Y[k,:],sum_interm,n_subspace_vectors);
+
+    psi_n = np.zeros((n_int_grid_points,n_subspace_vectors));
+    psi_n = psi_n_plus + jun_wn*dt;
+    for i in range(s):
+        psi_n += lambda_[i];
+
+    return psi_n;
+
+
 
 def rk3(tn,n_int_grid_points,un,dt,f):
     c2 = 1.0/2.0; c3 = 3.0/4.0;
