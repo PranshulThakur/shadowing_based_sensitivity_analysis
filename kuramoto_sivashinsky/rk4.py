@@ -236,15 +236,43 @@ def rk4(n_int_grid_points,un,dt,f):
 
     # Compute Y_i
     for i in range(s):
-        Y[i,:] = un;
+        Y[i,:] += un;
         for j in range(0,i):
             if A[i,j] != 0.0:
                 Y[i,:] += dt*A[i,j]*f(Y[j,:]);
 
     # compute un_plus
-    un_plus = un;
+    un_plus += un;
     for i in range(s):
         un_plus += dt*b[i]*f(Y[i,:]);
+
+    return un_plus;
+
+def rk4_2(n_int_grid_points,un,dt,f):
+    s = 4;
+    A = np.zeros((s,s));
+    b = np.zeros(s);
+    b[0] = 1.0/6.0; b[1] = 1.0/3.0; b[2] = 1.0/3.0; b[3] = 1.0/6.0;
+    A[1,0] = 1.0/2.0; A[2,1] = 1.0/2.0; A[3,2] = 1.0;
+
+    Y_i = np.zeros(n_int_grid_points);
+    f_val = np.zeros((s,n_int_grid_points));
+    un_plus = np.zeros(n_int_grid_points);
+
+    # Compute Y_i
+    for i in range(s):
+        Y_i*=0;
+        Y_i += un;
+        for j in range(0,i):
+            if A[i,j] != 0.0:
+                Y_i += dt*A[i,j]*f_val[j,:];
+        
+        f_val[i,:] += f(Y_i);
+
+    # compute un_plus
+    un_plus += un;
+    for i in range(s):
+        un_plus += dt*b[i]*f_val[i,:];
 
     return un_plus;
 
@@ -258,16 +286,18 @@ def rk4_adjoint(n_int_grid_points,n_subspace_vectors,psi_n_plus,un,dt,f,f_u_adjo
     Y = np.zeros((s,n_int_grid_points));
     # Compute Y_i
     for i in range(s):
-        Y[i,:] = un;
+        Y[i,:] += un;
         for j in range(0,i):
             if A[i,j] != 0.0:
                 Y[i,:] += dt*A[i,j]*f(Y[j,:]);
 
     lambda_ = np.zeros((s,n_int_grid_points,n_subspace_vectors));
     sum_interm = np.zeros((n_int_grid_points,n_subspace_vectors));
+    psi_n = np.zeros((n_int_grid_points,n_subspace_vectors));
     if n_subspace_vectors==1:
         sum_interm  = np.zeros(n_int_grid_points);
         lambda_ = np.zeros((s,n_int_grid_points));
+        psi_n = np.zeros(n_int_grid_points);
 
     for k in range(s-1,-1,-1):
         sum_interm *= 0.0;
@@ -278,8 +308,7 @@ def rk4_adjoint(n_int_grid_points,n_subspace_vectors,psi_n_plus,un,dt,f,f_u_adjo
 
         lambda_[k] = dt*f_u_adjoint(Y[k,:],sum_interm,n_subspace_vectors);
 
-    psi_n = np.zeros((n_int_grid_points,n_subspace_vectors));
-    psi_n = psi_n_plus + jun_wn*dt;
+    psi_n += psi_n_plus + jun_wn*dt;
     for i in range(s):
         psi_n += lambda_[i];
 

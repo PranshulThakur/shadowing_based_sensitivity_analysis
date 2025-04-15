@@ -3,6 +3,7 @@ from rk4 import rk4vec
 from rk4 import rk4imex
 from rk4 import rk3
 from rk4 import rk4
+from rk4 import rk4_2
 from scipy import sparse;
 from integration_functions import *; 
 class KuramotoSivashinsky:
@@ -140,11 +141,11 @@ class KuramotoSivashinsky:
         for i in range(self.n_int_grid_points):
             uterm = (u[i] + self.c)/(2.0*self.dx);
             if i==0:
-                fu_T_adjoint[i] = psi[i+1]*uterm;
+                fu_T_adjoint[i] += psi[i+1]*uterm;
             elif i==(self.n_int_grid_points-1):
-                fu_T_adjoint[i] = -psi[i-1]*uterm;
+                fu_T_adjoint[i] -= psi[i-1]*uterm;
             else:
-                fu_T_adjoint[i] = (psi[i+1] - psi[i-1])*uterm;
+                fu_T_adjoint[i] += (psi[i+1] - psi[i-1])*uterm;
 
         return fu_T_adjoint;
     
@@ -266,14 +267,14 @@ class KuramotoSivashinsky:
         for i in range(n_pre_steps):
             ti = i*self.dt;
             #u0 = rk4imex(self.n_int_grid_points,u0,self.f_implicit,self.f_explicit,self.I_minus_12A_inv,self.I_minus_13A_inv,self.dt);    
-            u0 = rk4(self.n_int_grid_points,u0,self.dt,self.f);
+            u0 = rk4_2(self.n_int_grid_points,u0,self.dt,self.f);
 
         u = np.zeros((self.m_time_steps+1, self.n_int_grid_points));
-        u[0,:] = u0;
+        u[0,:] += u0;
         for i in range(self.m_time_steps):
             ti = i*self.dt;
             #u[i+1,:] = rk4imex(self.n_int_grid_points,u[i,:],self.f_implicit,self.f_explicit,self.I_minus_12A_inv,self.I_minus_13A_inv,self.dt);    
-            u[i+1,:] = rk4(self.n_int_grid_points,u[i,:],self.dt,self.f);
+            u[i+1,:] = rk4_2(self.n_int_grid_points,u[i,:],self.dt,self.f);
         
         return u;
 

@@ -33,7 +33,7 @@ def QR_decomposition(A,n,m): # A is nxm
     R = np.zeros((m,m));
 
     for i in range(m):
-        Q[:,i] = A[:,i];
+        Q[:,i] += A[:,i];
         for j in range(i):
             R[j,i] = np.dot(Q[:,j],A[:,i]);
             Q[:,i] -= R[j,i]*Q[:,j];
