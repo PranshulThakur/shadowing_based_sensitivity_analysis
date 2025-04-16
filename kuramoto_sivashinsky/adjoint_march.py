@@ -141,6 +141,9 @@ class AdjointMarch:
         dpsi_dt = -self.solver.f_u_transposed_adjoint(u,adjoint_n,1) - j_u;
         return dpsi_dt;
 
+    def zero_function(self,u):
+        return np.zeros((self.nstate,self.n_subspace_vectors));
+
     def integrate_adjoint_hom(self,nsteps,Y_i,i): # From T_i to T_{i-1}
         Y = np.zeros((self.nstate,self.n_subspace_vectors));
         Y += Y_i;
@@ -149,12 +152,12 @@ class AdjointMarch:
         u = self.u_stored[t_index,:];
         integrand = np.zeros((self.nsteps+1,self.n_subspace_vectors));
         integrand[self.nsteps,:] = Y.T @ self.solver.f_c(u);
-        jun_wn = np.zeros((self.nstate,self.n_subspace_vectors));
+        #jun_wn = np.zeros((self.nstate,self.n_subspace_vectors));
         for j in range(nsteps):
             t_index -= 1;
             u = self.u_stored[t_index,:];
             #Y = rk4imex_adjoint(self.nstate,self.n_subspace_vectors,Y,u,self.solver.f_implicit,self.solver.f_explicit,self.solver.f_u_transposed_adjoint_implicit,self.solver.f_u_transposed_adjoint_explicit,self.solver.I_minus_12A_inv, self.solver.I_minus_13A_inv,self.solver.I_minus_12Aadjoint_inv, self.solver.I_minus_13Aadjoint_inv,jun_wn,self.dt);
-            Y = rk4_adjoint(self.nstate,self.n_subspace_vectors,Y,u,self.dt,self.solver.f,self.solver.f_u_transposed_adjoint, jun_wn);
+            Y = rk4_adjoint(self.nstate,self.n_subspace_vectors,Y,u,self.dt,self.solver.f,self.solver.f_u_transposed_adjoint, self.zero_function);
             self.Y_stored[i-1,(self.nsteps-j-1),:,:] += Y;
             integrand[self.nsteps-j-1,:] = Y.T @ self.solver.f_c(u);
 
@@ -172,13 +175,13 @@ class AdjointMarch:
         u = self.u_stored[t_index,:];
         integrand = np.zeros(self.nsteps+1);
         integrand[self.nsteps] = np.dot(v, self.solver.f_c(u));
-        jun_wn = np.zeros(self.nstate);
+        #jun_wn = np.zeros(self.nstate);
         for j in range(nsteps):
             t_index -= 1;
             u = self.u_stored[t_index,:];
-            jun_wn = self.functional.j_u(u)*self.w_simpson[t_index];
+            #jun_wn = self.functional.j_u(u)*self.w_simpson[t_index];
             #v = rk4imex_adjoint(self.nstate,1,v,u,self.solver.f_implicit,self.solver.f_explicit,self.solver.f_u_transposed_adjoint_implicit,self.solver.f_u_transposed_adjoint_explicit,self.solver.I_minus_12A_inv, self.solver.I_minus_13A_inv,self.solver.I_minus_12Aadjoint_inv, self.solver.I_minus_13Aadjoint_inv,jun_wn,self.dt);
-            v = rk4_adjoint(self.nstate,1,v,u,self.dt,self.solver.f,self.solver.f_u_transposed_adjoint,jun_wn);
+            v = rk4_adjoint(self.nstate,1,v,u,self.dt,self.solver.f,self.solver.f_u_transposed_adjoint,self.functional.j_u);
             self.v_stored[i-1,nsteps-j-1,:] += v;
             integrand[self.nsteps-j-1] =  np.dot(v, self.solver.f_c(u));  
         
@@ -215,7 +218,7 @@ class AdjointMarch:
         Q = np.zeros((self.nstate,self.n_subspace_vectors));
         Q += Qt[:,1:];
         K_extra = round(self.T_extra/self.delT);
-        jun_wn = np.zeros((self.nstate,self.n_subspace_vectors));
+        #jun_wn = np.zeros((self.nstate,self.n_subspace_vectors));
         lyapunov_exp_stored = np.zeros( (K_extra,self.n_subspace_vectors));
         times_stored = np.zeros(K_extra);
         lyapunov_exp_sum = np.zeros(self.n_subspace_vectors);
@@ -226,7 +229,7 @@ class AdjointMarch:
                 t_index -= 1;
                 u = self.u_stored[t_index,:];
                 #Q = rk4imex_adjoint(self.nstate,self.n_subspace_vectors,Q,u,self.solver.f_implicit,self.solver.f_explicit,self.solver.f_u_transposed_adjoint_implicit,self.solver.f_u_transposed_adjoint_explicit,self.solver.I_minus_12A_inv, self.solver.I_minus_13A_inv,self.solver.I_minus_12Aadjoint_inv, self.solver.I_minus_13Aadjoint_inv,jun_wn,self.dt);
-                Q = rk4_adjoint(self.nstate,self.n_subspace_vectors,Q,u,self.dt,self.solver.f,self.solver.f_u_transposed_adjoint, jun_wn);
+                Q = rk4_adjoint(self.nstate,self.n_subspace_vectors,Q,u,self.dt,self.solver.f,self.solver.f_u_transposed_adjoint, self.zero_function);
 
             #Q , R = scipy.linalg.qr(Q,mode='economic');
             Q , R = QR_decomposition(Q,self.nstate,self.n_subspace_vectors);

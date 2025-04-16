@@ -276,7 +276,7 @@ def rk4_2(n_int_grid_points,un,dt,f):
 
     return un_plus;
 
-def rk4_adjoint(n_int_grid_points,n_subspace_vectors,psi_n_plus,un,dt,f,f_u_adjoint, jun_wn): # Between n+1 to n. 
+def rk4_adjoint(n_int_grid_points,n_subspace_vectors,psi_n_plus,un,dt,f,f_u_adjoint, j_u): # Between n+1 to n. 
     s = 4;
     A = np.zeros((s,s));
     b = np.zeros(s);
@@ -306,15 +306,32 @@ def rk4_adjoint(n_int_grid_points,n_subspace_vectors,psi_n_plus,un,dt,f,f_u_adjo
             if A[i,k] != 0.0:
                 sum_interm += A[i,k]*lambda_[i];
 
-        lambda_[k] = dt*f_u_adjoint(Y[k,:],sum_interm,n_subspace_vectors);
+        lambda_[k] = dt*f_u_adjoint(Y[k,:],sum_interm,n_subspace_vectors) + dt*b[k]*j_u(Y[k,:]);
 
-    psi_n += psi_n_plus + jun_wn*dt;
+    psi_n += psi_n_plus;
     for i in range(s):
         psi_n += lambda_[i];
 
     return psi_n;
 
+def rk4_adjoint_2(n_int_grid_points,n_subspace_vectors,psi_n_plus,un,un_plus,dt,f_u_adjoint, ju): # Between n+1 to n. 
+    psi_1 = psi_n_plus;
+    u_interm = un_plus;
+    g1 = -f_u_adjoint(u_interm,psi_1,n_subspace_vectors) - ju(u_interm);
 
+    psi_2 = psi_n_plus - dt/2.0*g1;
+    u_interm = 0.5*(un + un_plus);
+    g2 = -f_u_adjoint(u_interm,psi_2,n_subspace_vectors) - ju(u_interm);
+    
+    psi_3 = psi_n_plus - dt/2.0*g2;
+    g3 = -f_u_adjoint(u_interm,psi_3,n_subspace_vectors) - ju(u_interm);
+    
+    psi_4 = psi_n_plus - dt*g3;
+    u_interm = un;
+    g4 = -f_u_adjoint(u_interm,psi_4,n_subspace_vectors) - ju(u_interm);
+
+    psi_n = psi_n_plus - dt*(1.0/6.0*g1 + 1.0/3.0*g2 + 1.0/3.0*g3 + 1.0/6.0*g4);
+    return psi_n;
 
 def rk3(tn,n_int_grid_points,un,dt,f):
     c2 = 1.0/2.0; c3 = 3.0/4.0;
