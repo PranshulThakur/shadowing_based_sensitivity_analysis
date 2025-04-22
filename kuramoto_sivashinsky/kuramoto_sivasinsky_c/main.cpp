@@ -66,6 +66,75 @@ void write_u0_array(const std::array<std::array<double,n_int_grid_points>,n_runs
     outfile.close();
 }
 
+template<int n_int_grid_points, int n_subspace_vectors>
+void f_dot_adjoint_average_convergence_dt()
+{
+    const int n_runs = 10;
+    const int n_grids = 5;
+    const double delT = 10.0;
+    const double T_net = 50.0;
+    const double T_extra = 0.0;
+    const double T = 50.0;
+    const double s = 0.0;
+    std::array<double,n_grids> dt_array;
+    std::array<std::array<double,n_runs>,n_grids> f_dot_adjoint_average_array;
+
+    for(int i=0; i<n_grids; ++i)
+    {
+        dt_array[i] = 0.025*pow(0.5,i);
+    }
+    // Seed the random number generator
+    std::random_device rd;
+    std::mt19937 generator(rd());
+    std::uniform_real_distribution<double> distribution(-0.5, 0.5);
+    std::array<std::array<double,n_int_grid_points>,n_runs> u0;
+    for(int i=0; i<n_runs; ++i)
+    {
+        for(int j=0; j<n_int_grid_points;++j)
+        {
+            u0[i][j] = distribution(generator);
+        }
+    }
+    
+    for(int i=0; i<n_runs; ++i)
+    {
+        for(int j=0; j<n_grids; ++j)
+        {
+            std::shared_ptr<KS_Equations<n_int_grid_points,n_subspace_vectors>> ks_solver = 
+                std::make_shared<KS_Equations<n_int_grid_points,n_subspace_vectors>> (dt_array[j], T_net+T_extra, s);
+            std::vector<std::array<double,n_int_grid_points>> u_stored_net;
+            ks_solver->compute_trajectory(u0[i],u_stored_net);
+            f_dot_adjoint_average_array[j][i] = compute_adjoint_sensitivity<n_int_grid_points,n_subspace_vectors>(T,dt_array[j],delT,T_extra,T_net,u_stored_net,ks_solver,true);
+        }
+    }
+    write_u0_array<n_int_grid_points,n_runs>(u0);
+
+    std::ofstream file_fdotpsi_avg, file_dt_array;
+    file_fdotpsi_avg.open("f_dot_adjoint_runs_array.txt");
+
+    for(int i=0; i<n_grids; ++i)
+    {
+        for(int j=0; j<n_runs; ++j)
+        {
+            file_fdotpsi_avg<<f_dot_adjoint_average_array[i][j];
+            if(j==(n_runs-1)) {file_fdotpsi_avg<<"\n";}
+            else {file_fdotpsi_avg<<" ";}
+        }
+    }
+
+    file_fdotpsi_avg.close();
+    
+    file_dt_array.open("dt_array_f_dot_adjoint.txt");
+
+    for(int i=0; i<n_grids; ++i)
+    {
+        file_dt_array<<dt_array[i];
+        if(i<(n_grids-1)) {file_dt_array<<" ";}
+    }
+    file_dt_array.close();
+}
+
+
 
 template<int n_int_grid_points,int n_subspace_vectors>
 void djbar_ds_vs_s()
@@ -152,35 +221,6 @@ int main()
 {
     const int n_subspace_vectors=20;
     const int n_int_grid_points=127; // 127, 255, 511
-    /*
-    const double dt=0.01;
-    const double T = 1000.0;
-    const double T_extra=50.0;
-    const double delT = 5.0;
-    const double s=0.0;
-
-    std::shared_ptr<KS_Equations<n_int_grid_points,n_subspace_vectors>> ks_solver = 
-        std::make_shared<KS_Equations<n_int_grid_points,n_subspace_vectors>> (dt,T+T_extra,s);
-     
-    // Seed the random number generator
-    std::random_device rd;
-    std::mt19937 generator(rd());
-    std::uniform_real_distribution<double> distribution(-0.5, 0.5);
-
-    std::array<double,n_int_grid_points> u0;    
-    for(int i=0; i<n_int_grid_points;++i)
-    {
-        u0[i] = distribution(generator);
-    }
-
-    std::vector<std::array<double,n_int_grid_points>> u_stored;
-    ks_solver->compute_trajectory(u0,u_stored);
-
-    std::shared_ptr<AdjointMarch<n_int_grid_points,n_subspace_vectors>> adjoint_march = 
-        std::make_shared<AdjointMarch<n_int_grid_points,n_subspace_vectors>> (ks_solver,u_stored,dt,delT,T,T_extra);
-
-    const double sensitivity = adjoint_march->compute_sensitivity();
-    std::cout<<"Sensitivity = "<<sensitivity<<std::endl;
-    */
     djbar_ds_vs_s<n_int_grid_points,n_subspace_vectors>();
+    f_dot_adjoint_average_convergence_dt<n_int_grid_points,n_subspace_vectors>();
 }
