@@ -49,6 +49,33 @@ double compute_adjoint_sensitivity(const double T, const double dt, const double
     return sensitivity;
 }
 
+template<int n_int_grid_points, int n_subspace_vectors>
+void run_particular_initial_condition()
+{
+    const double delT = 10.0;
+    const double T_extra = 100.0;
+    const double T = 500.0;
+    const double s = 0.0;
+    const double dt = 1.0e-2;
+
+    std::array<double,n_int_grid_points> u0;
+    // Seed the random number generator
+    std::random_device rd;
+    std::mt19937 generator(rd());
+    std::uniform_real_distribution<double> distribution(-0.5, 0.5);
+    for(int j=0; j<n_int_grid_points;++j)
+    {
+        u0[j] = distribution(generator);
+    }
+    
+    std::shared_ptr<KS_Equations<n_int_grid_points,n_subspace_vectors>> ks_solver = 
+        std::make_shared<KS_Equations<n_int_grid_points,n_subspace_vectors>> (dt, T+T_extra, s);
+    std::vector<std::array<double,n_int_grid_points>> u_stored_net;
+    ks_solver->compute_trajectory(u0,u_stored_net);
+    const double sensitivity = compute_adjoint_sensitivity<n_int_grid_points,n_subspace_vectors>(T,dt,delT,T_extra,T,u_stored_net,ks_solver);
+    std::cout<<"Sensitivity = "<<sensitivity<<std::endl;
+}
+
 template<int n_int_grid_points,int n_runs>
 void write_u0_array(const std::array<std::array<double,n_int_grid_points>,n_runs> & u0_array)
 {
@@ -219,8 +246,9 @@ void djbar_ds_vs_s()
 
 int main()
 {
+    const int n_int_grid_points=255; // 127, 255, 511
     const int n_subspace_vectors=20;
-    const int n_int_grid_points=127; // 127, 255, 511
-    djbar_ds_vs_s<n_int_grid_points,n_subspace_vectors>();
-    f_dot_adjoint_average_convergence_dt<n_int_grid_points,n_subspace_vectors>();
+    //djbar_ds_vs_s<n_int_grid_points,n_subspace_vectors>();
+    //f_dot_adjoint_average_convergence_dt<n_int_grid_points,n_subspace_vectors>();
+    run_particular_initial_condition<n_int_grid_points,n_subspace_vectors>();
 }
