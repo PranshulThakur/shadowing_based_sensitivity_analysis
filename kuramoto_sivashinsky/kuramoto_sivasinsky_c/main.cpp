@@ -54,7 +54,7 @@ void run_particular_initial_condition()
 {
     const double delT = 10.0;
     const double T_extra = 500.0;
-    const double T = 500.0;
+    const double T = 2000.0;
     const double s = 0.0;
     const double dt = 5.0e-4;
 
@@ -244,11 +244,84 @@ void djbar_ds_vs_s()
     outfile_2.close();
 }
 
+template<int n_int_grid_points, int n_subspace_vectors>
+void djbar_ds_vs_T()
+{
+    const int n_runs = 10;
+    const int n_times = 20;
+    const double T_final = 2000.0;
+    std::array<double,n_times> T_array;
+    std::array<std::array<double,n_runs>,n_times> sensitivity_array;
+    const double dt = 5.0e-4;
+    const double delT = 5.0;
+    const double T_net = T_final;
+    const double T_extra = 500.0;
+    const double s=0.0;
+    // Seed the random number generator
+    std::random_device rd;
+    std::mt19937 generator(rd());
+    std::uniform_real_distribution<double> distribution(-0.5, 0.5);
+    std::array<std::array<double,n_int_grid_points>,n_runs> u0;
+    for(int i=0; i<n_runs; ++i)
+    {
+        for(int j=0; j<n_int_grid_points;++j)
+        {
+            u0[i][j] = distribution(generator);
+        }
+    }
+
+    const double c_factor = pow(T_final/10.0, 1.0/(n_times-1.0));
+    for(int i=0; i<n_times; ++i)
+    {
+        const double Ti = pow(c_factor,i)*10.0;
+        const int round_K = Ti/delT;
+        T_array[i] = round_K*delT;
+    }
+
+    for(int j=0; j<n_runs; ++j)
+    {
+        std::shared_ptr<KS_Equations<n_int_grid_points,n_subspace_vectors>> ks_solver = 
+            std::make_shared<KS_Equations<n_int_grid_points,n_subspace_vectors>> (dt,T_net+T_extra,s);
+        std::vector<std::array<double,n_int_grid_points>> u_stored_net;
+        ks_solver->compute_trajectory(u0[j],u_stored_net);
+        for(int i=0; i<n_times; ++i)
+        {
+            sensitivity_array[i][j] = compute_adjoint_sensitivity<n_int_grid_points,n_subspace_vectors>(T_array[i],dt,delT,T_extra,T_net,u_stored_net,ks_solver);
+        }
+    }
+
+    // Write to files
+    write_u0_array<n_int_grid_points,n_runs>(u0);
+
+    std::ofstream file_T, file_sensitivity;
+
+    file_T.open("T_array_djbar_ds_vs_T_runs.txt");
+    for(int i=0; i<n_times; ++i)
+    {
+        file_T<<T_array[i];
+        if(i<(n_times-1)) {file_T<<" ";}
+    }
+    file_T.close();
+
+    file_sensitivity.open("sensitivity_array_djbar_ds_vs_T_runs.txt");
+    for(int i=0; i<n_times; ++i)
+    {
+        for(int j=0; j<n_runs; ++j)
+        {
+            file_sensitivity<<sensitivity_array[i][j];
+            if(j==(n_runs-1)) {file_sensitivity<<"\n";}
+            else {file_sensitivity<<" ";}
+        }
+    }
+    file_sensitivity.close();
+}
+
 int main()
 {
     const int n_int_grid_points=127; // 127, 255, 511
     const int n_subspace_vectors=20;
-    djbar_ds_vs_s<n_int_grid_points,n_subspace_vectors>();
+    djbar_ds_vs_T<n_int_grid_points,n_subspace_vectors>();
+    //djbar_ds_vs_s<n_int_grid_points,n_subspace_vectors>();
     //f_dot_adjoint_average_convergence_dt<n_int_grid_points,n_subspace_vectors>();
     //run_particular_initial_condition<n_int_grid_points,n_subspace_vectors>();
 }
