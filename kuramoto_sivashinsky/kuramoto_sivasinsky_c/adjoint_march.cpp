@@ -143,7 +143,7 @@ compute_Y_terminal(std::array<std::array<double,n_subspace_vectors>,n_int_grid_p
         for(int j=n_steps; j>0; --j) // Move from j to j-1
         {
             t_index-=1;
-            ks_solver->rk4_adjoint_hom(Q,u_stored[t_index],Y_terminal);
+            ks_solver->rk3_adjoint_hom(Q,u_stored[t_index],Y_terminal);
             // Set Q=Y_terminal
             for(int k=0; k<n_int_grid_points; ++k)
             {
@@ -241,8 +241,8 @@ compute_R_b_d_h_vecs()
         for(int j=n_steps; j>0; --j) // Between j and j-1
         {
            t_index-=1;
-           ks_solver->rk4_adjoint_hom(Y,u_stored[t_index],Y_minus);
-           ks_solver->rk4_adjoint_nonhom(v,u_stored[t_index],v_minus);
+           ks_solver->rk3_adjoint_hom(Y,u_stored[t_index],Y_minus);
+           ks_solver->rk3_adjoint_nonhom(v,u_stored[t_index],v_minus);
            for(int k=0; k<n_int_grid_points;++k)
            {
                 for(int l=0; l<n_subspace_vectors;++l)

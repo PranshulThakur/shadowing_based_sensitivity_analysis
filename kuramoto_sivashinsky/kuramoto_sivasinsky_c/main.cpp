@@ -53,10 +53,10 @@ template<int n_int_grid_points, int n_subspace_vectors>
 void run_particular_initial_condition()
 {
     const double delT = 10.0;
-    const double T_extra = 100.0;
+    const double T_extra = 500.0;
     const double T = 500.0;
     const double s = 0.0;
-    const double dt = 1.0e-2;
+    const double dt = 5.0e-4;
 
     std::array<double,n_int_grid_points> u0;
     // Seed the random number generator
@@ -168,12 +168,12 @@ void djbar_ds_vs_s()
 {
     const int n_runs = 10;
     const int n_s = 11;
-    const double T1 = 100.0;
-    const double T2 = 1000.0;
-    const double dt = 1.0e-3;
+    const double T1 = 50.0;
+    const double T2 = 500.0;
+    const double dt = 5.0e-4;
     const double delT = 10.0;
-    const double T_net = 1000;
-    const double T_extra = 50.0;
+    const double T_net = 500;
+    const double T_extra = 500.0;
     std::array<double,n_s> s_array;
     std::array<std::array<double,n_runs>,n_s> sensitivity_array_T1;
     std::array<std::array<double,n_runs>,n_s> sensitivity_array_T2;
@@ -246,9 +246,9 @@ void djbar_ds_vs_s()
 
 int main()
 {
-    const int n_int_grid_points=255; // 127, 255, 511
+    const int n_int_grid_points=127; // 127, 255, 511
     const int n_subspace_vectors=20;
-    //djbar_ds_vs_s<n_int_grid_points,n_subspace_vectors>();
+    djbar_ds_vs_s<n_int_grid_points,n_subspace_vectors>();
     //f_dot_adjoint_average_convergence_dt<n_int_grid_points,n_subspace_vectors>();
-    run_particular_initial_condition<n_int_grid_points,n_subspace_vectors>();
+    //run_particular_initial_condition<n_int_grid_points,n_subspace_vectors>();
 }

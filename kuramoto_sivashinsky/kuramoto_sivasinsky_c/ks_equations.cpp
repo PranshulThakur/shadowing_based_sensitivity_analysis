@@ -22,7 +22,7 @@ compute_trajectory(std::array<double,n_int_grid_points> &u0,
 
     for(int i=0; i<=m_pre; ++i)
     {
-       rk4(u0,interm_vec);
+       rk3(u0,interm_vec);
        for(int j=0; j<n_int_grid_points;++j)
        {
             u0[j] = interm_vec[j];
@@ -42,7 +42,7 @@ compute_trajectory(std::array<double,n_int_grid_points> &u0,
         {
             u0[j] = u_stored[i][j];
         }
-        rk4(u0,interm_vec);
+        rk3(u0,interm_vec);
         for(int j=0; j<n_int_grid_points;++j)
         {
             u_stored[i+1][j] = interm_vec[j];
@@ -278,14 +278,13 @@ J(const std::array<double,n_int_grid_points> &u)
     
 template<int n_int_grid_points, int n_subspace_vectors>
 void KS_Equations<n_int_grid_points,n_subspace_vectors>::
-rk4(const std::array<double,n_int_grid_points> &un,
+rk3(const std::array<double,n_int_grid_points> &un,
     std::array<double,n_int_grid_points> &un_plus)
 {
    std::array<double,n_int_grid_points> u_interm; 
    std::array<double,n_int_grid_points> f1; 
    std::array<double,n_int_grid_points> f2; 
    std::array<double,n_int_grid_points> f3; 
-   std::array<double,n_int_grid_points> f4;
 
    f(un,f1); // compute f1
 
@@ -298,39 +297,30 @@ rk4(const std::array<double,n_int_grid_points> &un,
    
    for(int i=0; i<n_int_grid_points; ++i)
    {
-        u_interm[i] = un[i] + dt/2.0*f2[i]; //u3
+        u_interm[i] = un[i] + dt*(3.0/4.0)*f2[i]; //u3
    }
 
    f(u_interm,f3);
    
    for(int i=0; i<n_int_grid_points; ++i)
    {
-        u_interm[i] = un[i] + dt*f3[i]; //u4
-   }
-
-   f(u_interm,f4);
-
-   for(int i=0; i<n_int_grid_points; ++i)
-   {
-        un_plus[i] = un[i] + dt*(1.0/6.0*f1[i] + 1.0/3.0*f2[i] + 1.0/3.0*f3[i] + 1.0/6.0*f4[i]);
+        un_plus[i] = un[i] + dt*(2.0/9.0*f1[i] + 1.0/3.0*f2[i] + 4.0/9.0*f3[i]);
    }
 }
 
 template<int n_int_grid_points, int n_subspace_vectors>
 void KS_Equations<n_int_grid_points,n_subspace_vectors>::
-rk4_adjoint_nonhom(const std::array<double,n_int_grid_points> &psi_n_plus,
+rk3_adjoint_nonhom(const std::array<double,n_int_grid_points> &psi_n_plus,
                    const std::array<double,n_int_grid_points> &un,
                    std::array<double,n_int_grid_points> &psi_n)
 {
     std::array<double,n_int_grid_points> Y1;
     std::array<double,n_int_grid_points> Y2;
     std::array<double,n_int_grid_points> Y3;
-    std::array<double,n_int_grid_points> Y4;
     std::array<double,n_int_grid_points> fval;
     std::array<double,n_int_grid_points> lambda_1;
     std::array<double,n_int_grid_points> lambda_2;
     std::array<double,n_int_grid_points> lambda_3;
-    std::array<double,n_int_grid_points> lambda_4;
     std::array<double,n_int_grid_points> interm_vec;
 
     for(int i=0; i<n_int_grid_points;++i)
@@ -350,44 +340,25 @@ rk4_adjoint_nonhom(const std::array<double,n_int_grid_points> &psi_n_plus,
     f(Y2,fval);
     for(int i=0; i<n_int_grid_points;++i)
     {
-        Y3[i] = un[i] + dt/2.0*fval[i];
-    }
-    
-    // Compute Y4
-    f(Y3,fval);
-    for(int i=0; i<n_int_grid_points;++i)
-    {
-        Y4[i] = un[i] + dt*fval[i];
-    }
-
-    // Compute lambda_4
-    for(int i=0; i<n_int_grid_points;++i)
-    {
-        interm_vec[i] = 1.0/6.0*psi_n_plus[i];
-    }
-    f_u_adjoint_mult(interm_vec,Y4,lambda_4);
-    J_u(Y4,interm_vec);
-    for(int i=0; i<n_int_grid_points;++i)
-    {
-        lambda_4[i] = dt*lambda_4[i] + dt/6.0*interm_vec[i];
+        Y3[i] = un[i] + dt*(3.0/4.0)*fval[i];
     }
 
     // Compute lambda_3
     for(int i=0; i<n_int_grid_points;++i)
     {
-        interm_vec[i] = 1.0/3.0*psi_n_plus[i] + lambda_4[i];
+        interm_vec[i] = 4.0/9.0*psi_n_plus[i];
     }
     f_u_adjoint_mult(interm_vec,Y3,lambda_3);
     J_u(Y3,interm_vec);
     for(int i=0; i<n_int_grid_points;++i)
     {
-        lambda_3[i] = dt*lambda_3[i] + dt/3.0*interm_vec[i];
+        lambda_3[i] = dt*lambda_3[i] + dt*(4.0/9.0)*interm_vec[i];
     }
     
     // Compute lambda_2
     for(int i=0; i<n_int_grid_points;++i)
     {
-        interm_vec[i] = 1.0/3.0*psi_n_plus[i] + 0.5*lambda_3[i];
+        interm_vec[i] = 1.0/3.0*psi_n_plus[i] + 0.75*lambda_3[i];
     }
     f_u_adjoint_mult(interm_vec,Y2,lambda_2);
     J_u(Y2,interm_vec);
@@ -399,37 +370,35 @@ rk4_adjoint_nonhom(const std::array<double,n_int_grid_points> &psi_n_plus,
     // Compute lambda_1
     for(int i=0; i<n_int_grid_points;++i)
     {
-        interm_vec[i] = 1.0/6.0*psi_n_plus[i] + 0.5*lambda_2[i];
+        interm_vec[i] = (2.0/9.0)*psi_n_plus[i] + 0.5*lambda_2[i];
     }
     f_u_adjoint_mult(interm_vec,Y1,lambda_1);
     J_u(Y1,interm_vec);
     for(int i=0; i<n_int_grid_points;++i)
     {
-        lambda_1[i] = dt*lambda_1[i] + dt/6.0*interm_vec[i];
+        lambda_1[i] = dt*lambda_1[i] + dt*(2.0/9.0)*interm_vec[i];
     }
 
     // Add the results
     for(int i=0; i<n_int_grid_points;++i)
     {
-        psi_n[i] = psi_n_plus[i] + lambda_1[i]+lambda_2[i]+lambda_3[i]+lambda_4[i];
+        psi_n[i] = psi_n_plus[i] + lambda_1[i] + lambda_2[i] + lambda_3[i];
     }
 }
 
 template<int n_int_grid_points, int n_subspace_vectors>
 void KS_Equations<n_int_grid_points,n_subspace_vectors>::
-rk4_adjoint_hom(const std::array<std::array<double,n_subspace_vectors>,n_int_grid_points> &psi_n_plus,
+rk3_adjoint_hom(const std::array<std::array<double,n_subspace_vectors>,n_int_grid_points> &psi_n_plus,
                 const std::array<double,n_int_grid_points> &un,
                 std::array<std::array<double,n_subspace_vectors>,n_int_grid_points> &psi_n)
 {
     std::array<double,n_int_grid_points> Y1;
     std::array<double,n_int_grid_points> Y2;
     std::array<double,n_int_grid_points> Y3;
-    std::array<double,n_int_grid_points> Y4;
     std::array<double,n_int_grid_points> fval;
     std::array<std::array<double,n_subspace_vectors>,n_int_grid_points> lambda_1;
     std::array<std::array<double,n_subspace_vectors>,n_int_grid_points> lambda_2;
     std::array<std::array<double,n_subspace_vectors>,n_int_grid_points> lambda_3;
-    std::array<std::array<double,n_subspace_vectors>,n_int_grid_points> lambda_4;
     std::array<std::array<double,n_subspace_vectors>,n_int_grid_points> interm_vec;
 
     for(int i=0; i<n_int_grid_points;++i)
@@ -449,29 +418,14 @@ rk4_adjoint_hom(const std::array<std::array<double,n_subspace_vectors>,n_int_gri
     f(Y2,fval);
     for(int i=0; i<n_int_grid_points;++i)
     {
-        Y3[i] = un[i] + dt/2.0*fval[i];
+        Y3[i] = un[i] + dt*(3.0/4.0)*fval[i];
     }
     
-    // Compute Y4
-    f(Y3,fval);
-    for(int i=0; i<n_int_grid_points;++i)
-    {
-        Y4[i] = un[i] + dt*fval[i];
-    }
-
-    // Compute lambda_4
-    for(int i=0; i<n_int_grid_points;++i)
-    {
-        for(int j=0; j<n_subspace_vectors; ++j)
-            interm_vec[i][j] = 1.0/6.0*psi_n_plus[i][j]*dt;
-    }
-    f_u_adjoint_mult(interm_vec,Y4,lambda_4);
-
     // Compute lambda_3
     for(int i=0; i<n_int_grid_points;++i)
     {
         for(int j=0; j<n_subspace_vectors; ++j)
-            interm_vec[i][j] = (1.0/3.0*psi_n_plus[i][j] + lambda_4[i][j])*dt;
+            interm_vec[i][j] = (4.0/9.0*psi_n_plus[i][j])*dt;
     }
     f_u_adjoint_mult(interm_vec,Y3,lambda_3);
     
@@ -479,7 +433,7 @@ rk4_adjoint_hom(const std::array<std::array<double,n_subspace_vectors>,n_int_gri
     for(int i=0; i<n_int_grid_points;++i)
     {
         for(int j=0; j<n_subspace_vectors; ++j)
-            interm_vec[i][j] = (1.0/3.0*psi_n_plus[i][j] + 0.5*lambda_3[i][j])*dt;
+            interm_vec[i][j] = (1.0/3.0*psi_n_plus[i][j] + 0.75*lambda_3[i][j])*dt;
     }
     f_u_adjoint_mult(interm_vec,Y2,lambda_2);
     
@@ -487,7 +441,7 @@ rk4_adjoint_hom(const std::array<std::array<double,n_subspace_vectors>,n_int_gri
     for(int i=0; i<n_int_grid_points;++i)
     {
         for(int j=0; j<n_subspace_vectors; ++j)
-            interm_vec[i][j] = (1.0/6.0*psi_n_plus[i][j] + 0.5*lambda_2[i][j])*dt;
+            interm_vec[i][j] = (2.0/9.0*psi_n_plus[i][j] + 0.5*lambda_2[i][j])*dt;
     }
     f_u_adjoint_mult(interm_vec,Y1,lambda_1);
 
@@ -495,7 +449,7 @@ rk4_adjoint_hom(const std::array<std::array<double,n_subspace_vectors>,n_int_gri
     for(int i=0; i<n_int_grid_points;++i)
     {
         for(int j=0; j<n_subspace_vectors; ++j)
-            psi_n[i][j] = psi_n_plus[i][j] + lambda_1[i][j]+lambda_2[i][j]+lambda_3[i][j]+lambda_4[i][j];
+            psi_n[i][j] = psi_n_plus[i][j] + lambda_1[i][j] + lambda_2[i][j] + lambda_3[i][j];
     }
 }
 

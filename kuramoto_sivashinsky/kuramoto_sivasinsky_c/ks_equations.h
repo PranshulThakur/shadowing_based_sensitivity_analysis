@@ -33,14 +33,14 @@ public:
     void compute_trajectory(std::array<double,n_int_grid_points> &u0, 
                             std::vector<std::array<double,n_int_grid_points>> &u_stored);
 
-    void rk4(const std::array<double,n_int_grid_points> &un,
+    void rk3(const std::array<double,n_int_grid_points> &un,
              std::array<double,n_int_grid_points> &un_plus);
     
-    void rk4_adjoint_nonhom(const std::array<double,n_int_grid_points> &psi_n_plus,
+    void rk3_adjoint_nonhom(const std::array<double,n_int_grid_points> &psi_n_plus,
                             const std::array<double,n_int_grid_points> &un,
                             std::array<double,n_int_grid_points> &psi_n);
     
-    void rk4_adjoint_hom(const std::array<std::array<double,n_subspace_vectors>,n_int_grid_points> &psi_n_plus,
+    void rk3_adjoint_hom(const std::array<std::array<double,n_subspace_vectors>,n_int_grid_points> &psi_n_plus,
                          const std::array<double,n_int_grid_points> &un,
                          std::array<std::array<double,n_subspace_vectors>,n_int_grid_points> &psi_n);
 
