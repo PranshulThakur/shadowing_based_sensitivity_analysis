@@ -5,7 +5,8 @@
 #include <memory>
 #include <array>
 #include <fstream>
-
+#include <iomanip>
+int counter = 0;
 void check_equality(const double a, const int b)
 {
     if(abs(a-b)>1.0e-11)
@@ -53,12 +54,14 @@ template<int n_int_grid_points, int n_subspace_vectors>
 void run_particular_initial_condition()
 {
     const double delT = 10.0;
-    const double T_extra = 500.0;
-    const double T = 2000.0;
+    const double T_extra = 100.0;
+    const double T = 200.0;
     const double s = 0.0;
-    const double dt = 5.0e-4;
+    const double dt = 1.0e-2;
 
     std::array<double,n_int_grid_points> u0;
+   /* 
+    std::array<double,n_int_grid_points> u0_copy;
     // Seed the random number generator
     std::random_device rd;
     std::mt19937 generator(rd());
@@ -66,7 +69,17 @@ void run_particular_initial_condition()
     for(int j=0; j<n_int_grid_points;++j)
     {
         u0[j] = distribution(generator);
+        u0_copy[j] = u0[j];
     }
+    */
+    
+    const std::string filename =  "u0_array_issue_1.txt";
+    std::ifstream inputfile(filename);
+    for(int i=0; i<n_int_grid_points; ++i)
+    {
+        inputfile>>u0[i];
+    }
+    inputfile.close();
     
     std::shared_ptr<KS_Equations<n_int_grid_points,n_subspace_vectors>> ks_solver = 
         std::make_shared<KS_Equations<n_int_grid_points,n_subspace_vectors>> (dt, T+T_extra, s);
@@ -74,6 +87,21 @@ void run_particular_initial_condition()
     ks_solver->compute_trajectory(u0,u_stored_net);
     const double sensitivity = compute_adjoint_sensitivity<n_int_grid_points,n_subspace_vectors>(T,dt,delT,T_extra,T,u_stored_net,ks_solver);
     std::cout<<"Sensitivity = "<<sensitivity<<std::endl;
+    /*
+    if(abs(sensitivity+1.0)>0.4)
+    {
+        const std::string filename = "u0_array_issue_" + std::to_string(counter) + ".txt";
+        counter++;
+        std::ofstream outfile(filename);
+        for(int i=0; i<n_int_grid_points;++i)
+        {
+            outfile<<std::setprecision(20)<<u0_copy[i];
+            if(i<(n_int_grid_points-1)) {outfile<<" ";}
+        }
+        outfile.close();
+    }
+    */
+     
 }
 
 template<int n_int_grid_points,int n_runs>
@@ -320,8 +348,11 @@ int main()
 {
     const int n_int_grid_points=127; // 127, 255, 511
     const int n_subspace_vectors=20;
-    djbar_ds_vs_T<n_int_grid_points,n_subspace_vectors>();
+    //djbar_ds_vs_T<n_int_grid_points,n_subspace_vectors>();
     //djbar_ds_vs_s<n_int_grid_points,n_subspace_vectors>();
     //f_dot_adjoint_average_convergence_dt<n_int_grid_points,n_subspace_vectors>();
-    //run_particular_initial_condition<n_int_grid_points,n_subspace_vectors>();
+    for(int i=0; i<1; ++i)
+    {
+        run_particular_initial_condition<n_int_grid_points,n_subspace_vectors>();
+    }
 }
