@@ -1,5 +1,6 @@
 #include "adjoint_march.h"
 #include <cmath>
+#include <iostream>
 
 template<int n_int_grid_points,int n_subspace_vectors>
 AdjointMarch<n_int_grid_points,n_subspace_vectors>::
@@ -338,6 +339,18 @@ compute_unstable_subspace_dimension() const
         if(lyapunov_exponents[i]>0.0) {++dimension_unstable;}
         else {break;}
     }
+
+    for(int i=0;i<n_subspace_vectors; ++i)
+    {
+        for(int j=0; j<K; ++j)
+        {
+            std::cout<<R_vec[j][i][i];
+            if(j<(K-1)) {std::cout<<" ";}
+            else {std::cout<<" Lyapunov exponent = "<<lyapunov_exponents[i]<<"\n"<<"\n";}
+        }
+    }
+
+    std::cout<<"Unstable subspace dimension = "<<dimension_unstable<<std::endl;
     return dimension_unstable;
 }
     
