@@ -139,8 +139,8 @@ plt.show();
 dt_array = np.loadtxt("dt_array_f_dot_adjoint.txt");
 f_dot_adjoint_average_array = np.loadtxt("f_dot_adjoint_runs_array.txt");
 n_runs=10;
-C=10;
-expected_errors = C*(dt_array**4);
+C=1e3;
+expected_errors = C*(dt_array**3);
 plt.figure();
 for j in range(n_runs):
     if j==0:
@@ -148,7 +148,7 @@ for j in range(n_runs):
     else:
         plt.loglog(dt_array, f_dot_adjoint_average_array[:,j],'*',color='blue');
 
-plt.loglog(dt_array,expected_errors,'--',label=r"$\mathcal{O}(\Delta t^4)$",color="red");
+plt.loglog(dt_array,expected_errors,'--',label=r"$\mathcal{O}(\Delta t^3)$",color="red");
 
 plt.xlabel(r"$\Delta t$",fontsize=12);
 plt.ylabel(r"$\frac{1}{T}\int_0^T\psi^Tfdt$",fontsize=12);

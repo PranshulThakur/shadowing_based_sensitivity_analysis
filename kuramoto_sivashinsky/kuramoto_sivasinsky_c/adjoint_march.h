@@ -32,7 +32,7 @@ class AdjointMarch
     void compute_Y_terminal(std::array<std::array<double,n_subspace_vectors>,n_int_grid_points> &Y_terminal) const;
     void compute_v_terminal(std::array<double,n_int_grid_points> &v_terminal) const;
     template<int collength>
-    void compute_QR_decomposition(const std::array<std::array<double,collength>,n_int_grid_points> &A,
+    bool compute_QR_decomposition(const std::array<std::array<double,collength>,n_int_grid_points> &A,
                                   std::array<std::array<double,collength>,n_int_grid_points> &Q,
                                   std::array<std::array<double,collength>,collength> &R) const;
 
