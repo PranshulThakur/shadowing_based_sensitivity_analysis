@@ -1,6 +1,7 @@
 #include "adjoint_march.h"
 #include <cmath>
 #include <iostream>
+#include <random>
 
 template<int n_int_grid_points,int n_subspace_vectors>
 AdjointMarch<n_int_grid_points,n_subspace_vectors>::
@@ -114,13 +115,22 @@ compute_Y_terminal(std::array<std::array<double,n_subspace_vectors>,n_int_grid_p
         Y_augmented[i][0] = f_val[i];
     }
 
+    std::random_device rd;
+    std::mt19937 generator(rd());
+    std::uniform_real_distribution<double> distribution (-0.5, 0.5);
     for(int j=1; j<=n_subspace_vectors; ++j)
     {
+        /*
         for(int i=0; i<n_int_grid_points; ++i)
         {
             Y_augmented[i][j] = 0.0;
         }
         Y_augmented[j-1][j] = 1.0;
+        */ 
+        for(int i=0; i<n_int_grid_points; ++i)
+        {
+            Y_augmented[i][j] = distribution(generator);
+        }
     }
     std::array<std::array<double,n_subspace_vectors+1>,n_int_grid_points> Q_augmented;
     std::array<std::array<double,n_subspace_vectors+1>,n_subspace_vectors+1> R_augmented;
@@ -339,7 +349,7 @@ compute_unstable_subspace_dimension() const
         if(lyapunov_exponents[i]>0.0) {++dimension_unstable;}
         else {break;}
     }
-
+/*
     for(int i=0;i<n_subspace_vectors; ++i)
     {
         for(int j=0; j<K; ++j)
@@ -351,6 +361,7 @@ compute_unstable_subspace_dimension() const
     }
 
     std::cout<<"Unstable subspace dimension = "<<dimension_unstable<<std::endl;
+*/
     return dimension_unstable;
 }
     
