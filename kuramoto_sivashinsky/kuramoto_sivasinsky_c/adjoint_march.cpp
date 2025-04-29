@@ -1,6 +1,7 @@
 #include "adjoint_march.h"
 #include <cmath>
 #include <iostream>
+#include <random>
 
 template<int n_int_grid_points,int n_subspace_vectors>
 AdjointMarch<n_int_grid_points,n_subspace_vectors>::
@@ -54,7 +55,7 @@ simpson_integration(const std::vector<double> &integrand, const int n, const dou
 
 template<int n_int_grid_points,int n_subspace_vectors>
 template<int col_length>
-void AdjointMarch<n_int_grid_points,n_subspace_vectors>::
+bool AdjointMarch<n_int_grid_points,n_subspace_vectors>::
 compute_QR_decomposition(const std::array<std::array<double,col_length>,n_int_grid_points> &A,
                          std::array<std::array<double,col_length>,n_int_grid_points> &Q,
                          std::array<std::array<double,col_length>,col_length> &R) const
@@ -97,7 +98,18 @@ compute_QR_decomposition(const std::array<std::array<double,col_length>,n_int_gr
             Q[l][k]/= R[k][k];
         }
     }
-    
+
+    bool is_linearly_independent = true;
+    for(int i=0; i<col_length; ++i)
+    {
+        if(R[i][i]<0.05) 
+        {
+            std::cout<<"Linearly dependent"<<std::endl;
+            is_linearly_independent=false;
+            break;
+        }
+    }
+    return is_linearly_independent;
 }
     
 template<int n_int_grid_points,int n_subspace_vectors>
@@ -113,49 +125,57 @@ compute_Y_terminal(std::array<std::array<double,n_subspace_vectors>,n_int_grid_p
     {
         Y_augmented[i][0] = f_val[i];
     }
-
-    for(int j=1; j<=n_subspace_vectors; ++j)
-    {
-        for(int i=0; i<n_int_grid_points; ++i)
-        {
-            Y_augmented[i][j] = 0.0;
-        }
-        Y_augmented[j-1][j] = 1.0;
-    }
     std::array<std::array<double,n_subspace_vectors+1>,n_int_grid_points> Q_augmented;
     std::array<std::array<double,n_subspace_vectors+1>,n_subspace_vectors+1> R_augmented;
-    compute_QR_decomposition<n_subspace_vectors+1>(Y_augmented,Q_augmented,R_augmented);
-    std::array<std::array<double,n_subspace_vectors>,n_int_grid_points> Q;
-    std::array<std::array<double,n_subspace_vectors>,n_subspace_vectors> R;
-    for(int i=0; i<n_subspace_vectors;++i)
+        std::array<std::array<double,n_subspace_vectors>,n_int_grid_points> Q;
+        std::array<std::array<double,n_subspace_vectors>,n_subspace_vectors> R;
+    bool is_linearly_independent = false;
+    while(!is_linearly_independent)
     {
-        for(int j=0; j<n_int_grid_points;++j)
+        std::random_device rd;
+        std::mt19937 generator(rd());
+        std::uniform_real_distribution<double> distribution (-0.5, 0.5);
+        for(int j=1; j<=n_subspace_vectors; ++j)
         {
-            Q[j][i]=Q_augmented[j][i+1];
-        }
-    }
-
-    const int K_extra = T_extra/delT;
-
-    for(int i=K_extra; i>0; --i)
-    {
-        int t_index = (i+K)*n_steps;
-        // Integrate from Ti to T_{i-1}
-        for(int j=n_steps; j>0; --j) // Move from j to j-1
-        {
-            t_index-=1;
-            ks_solver->rk3_adjoint_hom(Q,u_stored[t_index],Y_terminal);
-            // Set Q=Y_terminal
-            for(int k=0; k<n_int_grid_points; ++k)
+            for(int i=0; i<n_int_grid_points; ++i)
             {
-                for(int l=0; l<n_subspace_vectors; ++l)
-                {
-                    Q[k][l] = Y_terminal[k][l];
-                }
+                Y_augmented[i][j] = distribution(generator);
             }
         }
-        // Perform QR decomposition
-        compute_QR_decomposition<n_subspace_vectors>(Y_terminal,Q,R);
+
+        is_linearly_independent = compute_QR_decomposition<n_subspace_vectors+1>(Y_augmented,Q_augmented,R_augmented);
+        if(!is_linearly_independent){continue;}
+        for(int i=0; i<n_subspace_vectors;++i)
+        {
+            for(int j=0; j<n_int_grid_points;++j)
+            {
+                Q[j][i]=Q_augmented[j][i+1];
+            }
+        }
+
+        const int K_extra = T_extra/delT;
+
+        for(int i=K_extra; i>0; --i)
+        {
+            int t_index = (i+K)*n_steps;
+            // Integrate from Ti to T_{i-1}
+            for(int j=n_steps; j>0; --j) // Move from j to j-1
+            {
+                t_index-=1;
+                ks_solver->rk3_adjoint_hom(Q,u_stored[t_index],Y_terminal);
+                // Set Q=Y_terminal
+                for(int k=0; k<n_int_grid_points; ++k)
+                {
+                    for(int l=0; l<n_subspace_vectors; ++l)
+                    {
+                        Q[k][l] = Y_terminal[k][l];
+                    }
+                }
+            }
+            // Perform QR decomposition
+            is_linearly_independent = compute_QR_decomposition<n_subspace_vectors>(Y_terminal,Q,R);
+            if(!is_linearly_independent){break;}
+        }
     }
 
     // Set Y_terminal=Q
@@ -339,7 +359,7 @@ compute_unstable_subspace_dimension() const
         if(lyapunov_exponents[i]>0.0) {++dimension_unstable;}
         else {break;}
     }
-
+/*
     for(int i=0;i<n_subspace_vectors; ++i)
     {
         for(int j=0; j<K; ++j)
@@ -351,6 +371,7 @@ compute_unstable_subspace_dimension() const
     }
 
     std::cout<<"Unstable subspace dimension = "<<dimension_unstable<<std::endl;
+*/
     return dimension_unstable;
 }
     

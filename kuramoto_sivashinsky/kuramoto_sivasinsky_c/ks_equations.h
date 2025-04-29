@@ -30,7 +30,7 @@ public:
                           const std::array<double,n_int_grid_points> &u, 
                           std::array<double,n_int_grid_points> &out_vec);
 
-    void compute_trajectory(std::array<double,n_int_grid_points> &u0, 
+    void compute_trajectory(const std::array<double,n_int_grid_points> &u0, 
                             std::vector<std::array<double,n_int_grid_points>> &u_stored);
 
     void rk3(const std::array<double,n_int_grid_points> &un,

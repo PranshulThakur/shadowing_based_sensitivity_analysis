@@ -13,9 +13,14 @@ KS_Equations<n_int_grid_points,n_subspace_vectors>::KS_Equations(const double dt
 
 template<int n_int_grid_points, int n_subspace_vectors>
 void KS_Equations<n_int_grid_points,n_subspace_vectors>::
-compute_trajectory(std::array<double,n_int_grid_points> &u0, 
+compute_trajectory(const std::array<double,n_int_grid_points> &u0_in, 
                    std::vector<std::array<double,n_int_grid_points>> &u_stored)
 {
+    std::array<double,n_int_grid_points> u0;
+    for(int i=0; i<n_int_grid_points; ++i)
+    {
+        u0[i] = u0_in[i];
+    }
     std::array<double,n_int_grid_points> interm_vec;
     const double T0=1000.0;
     const int m_pre = T0/dt;

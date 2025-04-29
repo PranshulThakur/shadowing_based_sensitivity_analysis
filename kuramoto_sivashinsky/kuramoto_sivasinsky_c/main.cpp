@@ -53,14 +53,14 @@ double compute_adjoint_sensitivity(const double T, const double dt, const double
 template<int n_int_grid_points, int n_subspace_vectors>
 void run_particular_initial_condition()
 {
-    const double delT = 10.0;
+    const double delT = 5.0;
     const double T_extra = 100.0;
     const double T = 200.0;
     const double s = 0.0;
     const double dt = 1.0e-2;
 
     std::array<double,n_int_grid_points> u0;
-   /* 
+   
     std::array<double,n_int_grid_points> u0_copy;
     // Seed the random number generator
     std::random_device rd;
@@ -71,22 +71,31 @@ void run_particular_initial_condition()
         u0[j] = distribution(generator);
         u0_copy[j] = u0[j];
     }
-    */
     
-    const std::string filename =  "u0_array_issue_1.txt";
+    /*
+    const std::string filename =  "u0_array_issue_3.txt";
     std::ifstream inputfile(filename);
     for(int i=0; i<n_int_grid_points; ++i)
     {
         inputfile>>u0[i];
     }
     inputfile.close();
+    */
     
     std::shared_ptr<KS_Equations<n_int_grid_points,n_subspace_vectors>> ks_solver = 
         std::make_shared<KS_Equations<n_int_grid_points,n_subspace_vectors>> (dt, T+T_extra, s);
     std::vector<std::array<double,n_int_grid_points>> u_stored_net;
     ks_solver->compute_trajectory(u0,u_stored_net);
     const double sensitivity = compute_adjoint_sensitivity<n_int_grid_points,n_subspace_vectors>(T,dt,delT,T_extra,T,u_stored_net,ks_solver);
-    std::cout<<"Sensitivity = "<<sensitivity<<std::endl;
+
+    if(abs(sensitivity+1)<0.5)
+    {
+        std::cout<<"Sensitivity = "<<sensitivity<<std::endl;
+    }
+    else
+    {
+        std::cout<<"Sensitivity = "<<sensitivity<<" is significantly different."<<std::endl;
+    }
     /*
     if(abs(sensitivity+1.0)>0.4)
     {
@@ -351,7 +360,7 @@ int main()
     //djbar_ds_vs_T<n_int_grid_points,n_subspace_vectors>();
     //djbar_ds_vs_s<n_int_grid_points,n_subspace_vectors>();
     //f_dot_adjoint_average_convergence_dt<n_int_grid_points,n_subspace_vectors>();
-    for(int i=0; i<1; ++i)
+    for(int i=0; i<100; ++i)
     {
         run_particular_initial_condition<n_int_grid_points,n_subspace_vectors>();
     }
