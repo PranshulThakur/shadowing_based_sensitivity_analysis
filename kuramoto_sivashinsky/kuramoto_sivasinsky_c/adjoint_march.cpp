@@ -462,7 +462,7 @@ compute_f_dot_adjoint_average() const
         f_dot_adj_avg += h_f_vec[i];
     }
     f_dot_adj_avg/=T;
-    return f_dot_adj_avg;
+    return abs(f_dot_adj_avg);
 }
 
 template class AdjointMarch<127,20>;

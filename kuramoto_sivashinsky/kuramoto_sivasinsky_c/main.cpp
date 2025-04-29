@@ -135,17 +135,17 @@ void f_dot_adjoint_average_convergence_dt()
 {
     const int n_runs = 10;
     const int n_grids = 5;
-    const double delT = 10.0;
-    const double T_net = 50.0;
-    const double T_extra = 0.0;
-    const double T = 50.0;
+    const double delT = 5.0;
+    const double T_net = 100.0;
+    const double T_extra = 100.0;
+    const double T = 100.0;
     const double s = 0.0;
     std::array<double,n_grids> dt_array;
     std::array<std::array<double,n_runs>,n_grids> f_dot_adjoint_average_array;
 
     for(int i=0; i<n_grids; ++i)
     {
-        dt_array[i] = 0.025*pow(0.5,i);
+        dt_array[i] = 0.2*pow(0.5,i);
     }
     // Seed the random number generator
     std::random_device rd;
