@@ -139,20 +139,22 @@ plt.show();
 dt_array = np.loadtxt("dt_array_f_dot_adjoint.txt");
 f_dot_adjoint_average_array = np.loadtxt("f_dot_adjoint_runs_array.txt");
 n_runs=10;
-C=10;
-expected_errors = C*(dt_array**4);
+C=1e0*0.2;
+expected_errors = C*(dt_array**3);
 plt.figure();
 for j in range(n_runs):
     if j==0:
-        plt.loglog(dt_array, f_dot_adjoint_average_array[:,j],'*',color='blue', label=r"$\frac{1}{T}\int_0^T\psi^Tfdt$");
+        plt.loglog(dt_array[:-1], f_dot_adjoint_average_array[:-1,j],'*',color='blue', label=r"$\frac{1}{T}\int_0^T\psi^Tfdt$");
+        #plt.loglog(dt_array, abs(f_dot_adjoint_average_array),'*',color='blue', label=r"$\frac{1}{T}\int_0^T\psi^Tfdt$");
     else:
-        plt.loglog(dt_array, f_dot_adjoint_average_array[:,j],'*',color='blue');
+        plt.loglog(dt_array[:-1], f_dot_adjoint_average_array[:-1,j],'*',color='blue');
 
-plt.loglog(dt_array,expected_errors,'--',label=r"$\mathcal{O}(\Delta t^4)$",color="red");
+plt.loglog(dt_array[:-1],expected_errors[:-1],'--',label=r"$\mathcal{O}(\Delta t^3)$",color="red");
 
 plt.xlabel(r"$\Delta t$",fontsize=12);
 plt.ylabel(r"$\frac{1}{T}\int_0^T\psi^Tfdt$",fontsize=12);
+plt.tight_layout();
+plt.ylim([1e-8,1e-1]);
 plt.legend(fontsize=12);
-plt.savefig("adjoint_neutral_convergence_ks.eps",format="eps");
+plt.savefig("adjoint_neutral_convergence_ks.pdf",format="pdf");
 plt.show();
-
