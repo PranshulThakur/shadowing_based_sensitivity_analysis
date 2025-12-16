@@ -1,5 +1,6 @@
 import numpy as np;
 import scipy;
+from scipy.sparse.linalg import spsolve
 
 class SensitivityAdjoint:
     def __init__(self, T, delT, n_subspace_vectors, R_vec_filename, b_vec_filename, d_vec_filename, h_vec_filename, J_c_filename):
@@ -40,9 +41,9 @@ class SensitivityAdjoint:
 
     def compute_sensitivity(self):
         self.compute_dimension_of_the_subspaces();
-        self.compute_a_backward_intermediate_march();
-        #self.compute_a_neutral_optimization();
-        self.compute_a_forwardmarch();
+        self.compute_a_stable_backward_intermediate_march();
+        self.compute_a_neutral_optimization();
+        self.compute_a_unstable_forwardmarch();
         sensitivity_val = 0.0;
 
         for i in range(self.K):
@@ -70,16 +71,57 @@ class SensitivityAdjoint:
         return 0;
         
 
-    def compute_a_backward_intermediate_march(self):
+    def compute_a_stable_backward_intermediate_march(self):
         self.a[self.K,self.stable_range]*=0;           
         for i in range(self.K,0,-1):
             self.multiply_triangular(self.R[i-1,self.stable_range,self.stable_range],self.a[i,self.stable_range],self.a[i-1,self.stable_range]);
             self.a[i-1,self.stable_range] -= self.b[i-1,self.stable_range];
          
         return 0;
+    
+    def compute_a_neutral_optimization(self):
+        len_neutral = len(self.b[0,self.neutral_range]);
+        rhs = np.zeros((self.K,len_neutral));
+
+        # Compute rhs
+        for i in range(1,self.K+1):
+            rhs[i-1,:] = self.b[i-1,self.neutral_range] - (self.R[i-1,self.neutral_range,self.stable_range] @ self.a[i,self.stable_range]);
+
+        # Form W matrix
+        row_len = self.K*len_neutral;
+        col_len =  (self.K+1)*len_neutral;
+        W = np.zeros( (row_len,col_len));
+        for i in range (row_len):
+            W[i,i] = -1.0;
+
+        for i in range(self.K):
+            rowrange = slice(len_neutral*i,len_neutral*(i+1));
+            colrange = slice(len_neutral*(i+1),len_neutral*(i+2));
+
+            W[rowrange,colrange] = self.R[i,self.neutral_range,self.neutral_range];
+
+        KKT_mat = np.zeros(((2*self.K+1)*len_neutral, (2*self.K+1)*len_neutral));
+        rhs_vec = np.zeros((2*self.K+1)*len_neutral);
+
+        for i in range(self.K):
+            rhs_vec[ (self.K+1+i)*len_neutral : (self.K+1+i+1)*len_neutral ] = rhs[i,:];
+
+        for i in range((self.K+1)*len_neutral):
+            KKT_mat[i,i] = -1.0;
+
+        KKT_mat[ (self.K+1)*len_neutral : (2*self.K+1)*len_neutral, 0:(self.K+1)*len_neutral ] = W;
+        KKT_mat[ 0:(self.K+1)*len_neutral, (self.K+1)*len_neutral : (2*self.K+1)*len_neutral ] = W.T;
+
+        KKT_sparse = scipy.sparse.csr_matrix(KKT_mat);
+        x = spsolve(KKT_sparse, rhs_vec);
+
+        for i in range(self.K+1):
+            self.a[i,self.neutral_range] = x[i*len_neutral: (i+1)*len_neutral];
+         
+        return 0;
      
                 
-    def compute_a_forwardmarch(self): 
+    def compute_a_unstable_forwardmarch(self): 
         self.a[0,self.unstable_range] *=0;
         for i in range(1,self.K+1):
             self.solve_triangular(self.R[i-1,self.unstable_range,self.unstable_range], self.a[i,self.unstable_range], (self.b[i-1,self.unstable_range] + self.a[i-1,self.unstable_range] - (self.R[i-1,self.unstable_range,self.neutral_range] @ self.a[i,self.neutral_range]) - (self.R[i-1,self.unstable_range,self.stable_range] @ self.a[i,self.stable_range]) ));
@@ -96,18 +138,19 @@ class SensitivityAdjoint:
 
         lyapunov_exp /= self.T;
         
+        tol_unstable = 0.02; #0.01;
+        tol_stable = -tol_unstable;
+        
         n_unstable = 0;
-        tol = 0.0;
-
         for i in range(self.n_subspace_vectors):
-            if (lyapunov_exp[i]>tol):
+            if (lyapunov_exp[i]>tol_unstable):
                 n_unstable +=1;
             else:
                 break;
 
         n_unstableneutral = 0;
         for i in range(self.n_subspace_vectors):
-            if (lyapunov_exp[i]>(-tol)):
+            if (lyapunov_exp[i]>tol_stable):
                 n_unstableneutral +=1;
             else:
                 break;
@@ -115,6 +158,11 @@ class SensitivityAdjoint:
         self.unstable_range = slice(0, n_unstable);
         self.neutral_range = slice(n_unstable, n_unstableneutral);
         self.stable_range = slice(n_unstableneutral,self.n_subspace_vectors);
+        
+        print("Lyapunov exp = ",lyapunov_exp);
+        print("unstable_range = ",self.unstable_range);
+        print("neutral_range = ",self.neutral_range);
+        print("stable_range = ",self.stable_range);
 
         return 0;
         
