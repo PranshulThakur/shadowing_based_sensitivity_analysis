@@ -2,6 +2,8 @@
 #include <cmath>
 #include <iostream>
 #include <random>
+#include <fstream>
+#include <iomanip>
 
 template<int n_int_grid_points,int n_subspace_vectors>
 AdjointMarch<n_int_grid_points,n_subspace_vectors>::
@@ -217,6 +219,11 @@ template<int n_int_grid_points,int n_subspace_vectors>
 void AdjointMarch<n_int_grid_points,n_subspace_vectors>::
 compute_R_b_d_h_vecs()
 {
+    std::ofstream cout_R("R_vec.txt"); 
+    std::ofstream cout_b("b_vec.txt"); 
+    std::ofstream cout_d("d_vec.txt"); 
+    std::ofstream cout_h("h_vec.txt"); 
+    std::ofstream cout_J_c("integral_J_c.txt"); 
     std::array<std::array<double,n_subspace_vectors>,n_int_grid_points> Y;
     std::array<double,n_int_grid_points> v;
     compute_Y_terminal(Y);
@@ -227,6 +234,7 @@ compute_R_b_d_h_vecs()
     
     std::vector<std::array<double,n_subspace_vectors>> integrand_d(n_steps+1);
     std::vector<double> integrand_h(n_steps+1);
+    std::vector<double> integrand_J_c(n_steps+1);
     std::vector<std::array<double,n_subspace_vectors>> integrand_d_f(n_steps+1);
     std::vector<double> integrand_h_f(n_steps+1);
     std::array<double,n_int_grid_points> f_c;
@@ -256,6 +264,7 @@ compute_R_b_d_h_vecs()
             integrand_h[n_steps]+= f_c[l]*v[l];
             integrand_h_f[n_steps]+= f[l]*v[l];
         }
+        integrand_J_c[n_steps] = 0.0; 
         //========================================
 
 
@@ -293,6 +302,7 @@ compute_R_b_d_h_vecs()
                 integrand_h[j-1]+= f_c[l]*v[l];
                 integrand_h_f[j-1]+= f[l]*v[l];
             }
+            integrand_J_c[j-1] = 0.0; 
             //========================================
         } //for n_steps ends
         // Compute integrals
@@ -308,10 +318,12 @@ compute_R_b_d_h_vecs()
         }
         h_vec[i-1]=0.0;
         h_f_vec[i-1]=0.0;
+        double integral_J_c = 0;
         for(int j=0; j<n_steps; ++j)
         {
             h_vec[i-1] += integrand_h[j]*dt*weights_simpson_nsteps[j];
             h_f_vec[i-1] += integrand_h_f[j]*dt*weights_simpson_nsteps[j];
+            integral_J_c += integrand_J_c[j]*dt*weights_simpson_nsteps[j];
         }
         compute_QR_decomposition<n_subspace_vectors>(Y,Q,R_vec[i-1]);
         // set b
@@ -334,6 +346,19 @@ compute_R_b_d_h_vecs()
             }
             v[k] +=sumval;
        }
+        
+        // Write R, b, integral_jc, integral_h and integrals_d to file.
+        for(unsigned int k1=0; k1<n_subspace_vectors; ++k1)
+        {
+            for(unsigned int k2 = 0; k2<n_subspace_vectors; ++k2)
+            {
+                cout_R<<std::setprecision(16)<<R_vec[i-1][k1][k2]<<"\n";
+            }
+            cout_b<<std::setprecision(16)<<b_vec[i-1][k1]<<"\n";
+            cout_d<<std::setprecision(16)<<d_vec[i-1][k1]<<"\n";
+        }
+        cout_J_c<<std::setprecision(16)<<integral_J_c<<"\n";
+        cout_h<<std::setprecision(16)<<h_vec[i-1]<<"\n";
     }
 
 }

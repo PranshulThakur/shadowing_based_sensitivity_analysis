@@ -360,7 +360,7 @@ int main()
     //djbar_ds_vs_T<n_int_grid_points,n_subspace_vectors>();
     //djbar_ds_vs_s<n_int_grid_points,n_subspace_vectors>();
     //f_dot_adjoint_average_convergence_dt<n_int_grid_points,n_subspace_vectors>();
-    for(int i=0; i<100; ++i)
+    for(int i=0; i<1; ++i)
     {
         run_particular_initial_condition<n_int_grid_points,n_subspace_vectors>();
     }
