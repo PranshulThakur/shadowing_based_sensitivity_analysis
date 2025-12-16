@@ -82,7 +82,7 @@ class SensitivityAdjoint:
     def compute_a_forwardmarch(self): 
         self.a[0,self.unstable_range] *=0;
         for i in range(1,self.K+1):
-            self.solve_triangular(self.R[i-1,self.unstable_range,self.unstable_range], self.a[i,self.unstable_range], (self.b[i-1,self.unstable_range] + self.a[i-1,self.unstable_range] - (self.R[i-1,self.unstable_range,self.stable_range] @ self.a[i,self.stable_range]) ));
+            self.solve_triangular(self.R[i-1,self.unstable_range,self.unstable_range], self.a[i,self.unstable_range], (self.b[i-1,self.unstable_range] + self.a[i-1,self.unstable_range] - (self.R[i-1,self.unstable_range,self.neutral_range] @ self.a[i,self.neutral_range]) - (self.R[i-1,self.unstable_range,self.stable_range] @ self.a[i,self.stable_range]) ));
         
         return 0;
 
@@ -97,16 +97,24 @@ class SensitivityAdjoint:
         lyapunov_exp /= self.T;
         
         n_unstable = 0;
-        tol = 0.01;
+        tol = 0.0;
 
         for i in range(self.n_subspace_vectors):
-            if (lyapunov_exp[i]>0.0):
+            if (lyapunov_exp[i]>tol):
                 n_unstable +=1;
             else:
                 break;
 
+        n_unstableneutral = 0;
+        for i in range(self.n_subspace_vectors):
+            if (lyapunov_exp[i]>(-tol)):
+                n_unstableneutral +=1;
+            else:
+                break;
+
         self.unstable_range = slice(0, n_unstable);
-        self.stable_range = slice(n_unstable,self.n_subspace_vectors);
+        self.neutral_range = slice(n_unstable, n_unstableneutral);
+        self.stable_range = slice(n_unstableneutral,self.n_subspace_vectors);
 
         return 0;
         
