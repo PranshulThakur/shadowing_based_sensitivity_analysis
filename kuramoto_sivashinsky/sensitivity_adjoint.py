@@ -90,7 +90,7 @@ class SensitivityAdjoint:
         # Form W matrix
         row_len = self.K*len_neutral;
         col_len =  (self.K+1)*len_neutral;
-        W = np.zeros( (row_len,col_len));
+        W = scipy.sparse.lil_matrix((row_len,col_len));
         for i in range (row_len):
             W[i,i] = -1.0;
 
@@ -100,7 +100,7 @@ class SensitivityAdjoint:
 
             W[rowrange,colrange] = self.R[i,self.neutral_range,self.neutral_range];
 
-        KKT_mat = np.zeros(((2*self.K+1)*len_neutral, (2*self.K+1)*len_neutral));
+        KKT_mat = scipy.sparse.lil_matrix(((2*self.K+1)*len_neutral, (2*self.K+1)*len_neutral));
         rhs_vec = np.zeros((2*self.K+1)*len_neutral);
 
         for i in range(self.K):
@@ -109,8 +109,10 @@ class SensitivityAdjoint:
         for i in range((self.K+1)*len_neutral):
             KKT_mat[i,i] = -1.0;
 
-        KKT_mat[ (self.K+1)*len_neutral : (2*self.K+1)*len_neutral, 0:(self.K+1)*len_neutral ] = W;
-        KKT_mat[ 0:(self.K+1)*len_neutral, (self.K+1)*len_neutral : (2*self.K+1)*len_neutral ] = W.T;
+        #KKT_mat[ (self.K+1)*len_neutral : (2*self.K+1)*len_neutral, 0:(self.K+1)*len_neutral ] = W;
+        assign_sub_lil_matrix(KKT_mat, W, (self.K+1)*len_neutral, 0);
+        #KKT_mat[ 0:(self.K+1)*len_neutral, (self.K+1)*len_neutral : (2*self.K+1)*len_neutral ] = W.T;
+        assign_sub_lil_matrix(KKT_mat, W.T, 0, (self.K+1)*len_neutral);
 
         KKT_sparse = scipy.sparse.csr_matrix(KKT_mat);
         x = spsolve(KKT_sparse, rhs_vec);
@@ -138,7 +140,7 @@ class SensitivityAdjoint:
 
         lyapunov_exp /= self.T;
         
-        tol_unstable = 0.02; #0.01;
+        tol_unstable = 100.0; #0.01;
         tol_stable = -tol_unstable;
         
         n_unstable = 0;
@@ -192,9 +194,34 @@ class SensitivityAdjoint:
         np.savetxt("lyapunov_exp_array.txt",lyapunov_exp_stored);
         return 0;
     
+def assign_sub_lil_matrix(large_matrix, small_matrix, row_start, col_start):
+    """
+    Assigns a small lil_matrix to a larger lil_matrix at a specific position.
 
-                
+    Args:
+        large_matrix (sp.lil_matrix): The destination matrix.
+        small_matrix (sp.lil_matrix): The source sub-matrix.
+        row_start (int): The starting row index for the assignment.
+        col_start (int): The starting column index for the assignment.
+    """
+    if row_start + small_matrix.shape[0] > large_matrix.shape[0] or \
+       col_start + small_matrix.shape[1] > large_matrix.shape[1]:
+        raise ValueError("Sub-matrix dimensions exceed large matrix bounds")
 
+    # Ensure small_matrix is in LIL format for direct access to .rows and .data
+    small_matrix = small_matrix.tolil()
+
+    # Iterate through each row of the small matrix
+    for i, (cols, values) in enumerate(zip(small_matrix.rows, small_matrix.data)):
+        if values:  # Only proceed if the row has non-zero elements
+            target_row_index = row_start + i
+            # Adjust column indices by the starting column offset
+            adjusted_cols = [c + col_start for c in cols]
+            
+            # Append the data and indices to the target row in the large matrix
+            # The lil_matrix handles appending to existing rows efficiently
+            large_matrix.rows[target_row_index].extend(adjusted_cols)
+            large_matrix.data[target_row_index].extend(values)
 
             
 
