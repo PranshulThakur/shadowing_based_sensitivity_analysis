@@ -5,6 +5,7 @@ import numpy as np;
 from matplotlib import pyplot as plt;
 from rk4 import *;
 from sensitivity_adjoint import *;
+import timeit
 
 def check_equality(num1, num2):
     if (np.abs(num1-num2) > 1.0e-10):
@@ -250,9 +251,11 @@ def djbar_ds_vs_s():
 #djbar_ds_vs_T();
 #djbar_ds_vs_s();
 #f_dot_adjoint_average_convergence_dt();
-delT = 5.0;
-T = 200.0;
-n_subspace_vectors = 20;
+
+delT = 0.01;
+T = 2.0;
+n_subspace_vectors = 12;
 
 adjoint_sensitivty = SensitivityAdjoint(T, delT, n_subspace_vectors, "R_vec.txt", "b_vec.txt", "d_vec.txt", "h_vec.txt", "integral_J_c.txt");
 print("Sensitivity = ",adjoint_sensitivty.compute_sensitivity());
+

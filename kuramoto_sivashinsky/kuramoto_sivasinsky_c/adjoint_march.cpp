@@ -104,7 +104,7 @@ compute_QR_decomposition(const std::array<std::array<double,col_length>,n_int_gr
     bool is_linearly_independent = true;
     for(int i=0; i<col_length; ++i)
     {
-        if(R[i][i]<0.05) 
+        if(R[i][i]<1.0e-5) 
         {
             std::cout<<"Linearly dependent"<<std::endl;
             is_linearly_independent=false;
@@ -134,15 +134,18 @@ compute_Y_terminal(std::array<std::array<double,n_subspace_vectors>,n_int_grid_p
     bool is_linearly_independent = false;
     while(!is_linearly_independent)
     {
+/*
         std::random_device rd;
         std::mt19937 generator(rd());
         std::uniform_real_distribution<double> distribution (-0.5, 0.5);
+*/
         for(int j=1; j<=n_subspace_vectors; ++j)
         {
             for(int i=0; i<n_int_grid_points; ++i)
             {
-                Y_augmented[i][j] = distribution(generator);
+                Y_augmented[i][j] = 0.0;
             }
+            Y_augmented[j-1][j] = 1.0;
         }
 
         is_linearly_independent = compute_QR_decomposition<n_subspace_vectors+1>(Y_augmented,Q_augmented,R_augmented);
@@ -264,7 +267,7 @@ compute_R_b_d_h_vecs()
             integrand_h[n_steps]+= f_c[l]*v[l];
             integrand_h_f[n_steps]+= f[l]*v[l];
         }
-        integrand_J_c[n_steps] = 0.0; 
+        integrand_J_c[n_steps] = 0.0;
         //========================================
 
 
@@ -319,7 +322,7 @@ compute_R_b_d_h_vecs()
         h_vec[i-1]=0.0;
         h_f_vec[i-1]=0.0;
         double integral_J_c = 0;
-        for(int j=0; j<n_steps; ++j)
+        for(int j=0; j<=n_steps; ++j)
         {
             h_vec[i-1] += integrand_h[j]*dt*weights_simpson_nsteps[j];
             h_f_vec[i-1] += integrand_h_f[j]*dt*weights_simpson_nsteps[j];
@@ -493,3 +496,9 @@ compute_f_dot_adjoint_average() const
 template class AdjointMarch<127,20>;
 template class AdjointMarch<255,20>;
 template class AdjointMarch<511,20>;
+template class AdjointMarch<127,30>;
+template class AdjointMarch<255,30>;
+template class AdjointMarch<511,30>;
+template class AdjointMarch<127,100>;
+template class AdjointMarch<255,100>;
+template class AdjointMarch<511,100>;

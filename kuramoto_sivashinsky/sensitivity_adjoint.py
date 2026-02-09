@@ -1,7 +1,7 @@
 import numpy as np;
 import scipy;
 from scipy.sparse.linalg import spsolve
-
+import time;
 class SensitivityAdjoint:
     def __init__(self, T, delT, n_subspace_vectors, R_vec_filename, b_vec_filename, d_vec_filename, h_vec_filename, J_c_filename):
         self.n_subspace_vectors = n_subspace_vectors;
@@ -41,6 +41,9 @@ class SensitivityAdjoint:
 
     def compute_sensitivity(self):
         self.compute_dimension_of_the_subspaces();
+        start_cpu_time = time.process_time()
+
+
         self.compute_a_stable_backward_intermediate_march();
         self.compute_a_neutral_optimization();
         self.compute_a_unstable_forwardmarch();
@@ -50,6 +53,9 @@ class SensitivityAdjoint:
             sensitivity_val += np.dot(self.a[i+1,:],self.d[i,:]) + self.h[i] + self.J_c_integral[i];
 
         sensitivity_val /= self.T;
+        end_cpu_time = time.process_time()
+
+        print(f"CPU time used: {end_cpu_time - start_cpu_time:.4f} seconds")
         return sensitivity_val;
 
     def solve_triangular(self,A,x,rhs): # A is upper triangular, mxm.
@@ -140,7 +146,7 @@ class SensitivityAdjoint:
 
         lyapunov_exp /= self.T;
         
-        tol_unstable = 100.0; #0.01;
+        tol_unstable = 000.0; #0.01;
         tol_stable = -tol_unstable;
         
         n_unstable = 0;
