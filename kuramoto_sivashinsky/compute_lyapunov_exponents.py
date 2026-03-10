@@ -1,13 +1,14 @@
 import numpy as np;
 import matplotlib.pyplot as plt;
 
-n_subspace_vectors = 12;
-delT = 0.1;
+n_subspace_vectors = 15;
+delT = 1.0;
 
 Rvec = np.loadtxt("R_vec.txt");
 K = np.floor(len(Rvec)/(n_subspace_vectors**2)).astype(int);
 print(K);
 T = K*delT;
+print(T);
 R = np.zeros((K,n_subspace_vectors,n_subspace_vectors));
 countval = 0;
 for i in range(K):

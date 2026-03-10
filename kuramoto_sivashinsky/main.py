@@ -252,9 +252,9 @@ def djbar_ds_vs_s():
 #djbar_ds_vs_s();
 #f_dot_adjoint_average_convergence_dt();
 
-delT = 0.01;
-T = 2.0;
-n_subspace_vectors = 12;
+delT = 1.0;
+T = 100.0;
+n_subspace_vectors = 15;
 
 adjoint_sensitivty = SensitivityAdjoint(T, delT, n_subspace_vectors, "R_vec.txt", "b_vec.txt", "d_vec.txt", "h_vec.txt", "integral_J_c.txt");
 print("Sensitivity = ",adjoint_sensitivty.compute_sensitivity());

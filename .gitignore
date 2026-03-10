@@ -1,2 +1,8 @@
 *.pyc
 *.eps
+*.out
+*.txt
+*.png
+*.pdf
+*build_*
+*.sh
