@@ -2,7 +2,7 @@ import numpy as np;
 import matplotlib.pyplot as plt;
 
 n_subspace_vectors = 15;
-delT = 0.2;
+delT = 1.0;
 
 Rvec = np.loadtxt("R_vec.txt");
 K = np.floor(len(Rvec)/(n_subspace_vectors**2)).astype(int);
@@ -36,6 +36,6 @@ import matplotlib.pyplot as plt;
 plt.plot(times_stored,lyapunov_exp_stored);
 plt.xlabel("t",fontsize=12);
 plt.ylabel("Lyapunov exponents",fontsize=12);
-plt.title("P3; Mesh 2",fontsize=12);
-plt.savefig('lyapunov_exponents_p3_mesh2.png', format='png');
+plt.title("P2, Mesh 1, NSFR, Re = 2400",fontsize=12);
+plt.savefig('lyapunov_exponents_p2_mesh1_nsfr.png', format='png');
 plt.show();

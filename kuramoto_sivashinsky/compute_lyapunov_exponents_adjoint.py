@@ -38,4 +38,5 @@ plt.plot(times_stored,lyapunov_exp_stored);
 plt.xlabel("t",fontsize=12);
 plt.ylabel("Lyapunov exponents",fontsize=12);
 plt.savefig('lyapunov_exponents.eps', format='eps');
+plt.ylim([-0.2,0.2]);
 plt.show();
