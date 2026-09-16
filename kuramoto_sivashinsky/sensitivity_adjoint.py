@@ -171,6 +171,7 @@ class SensitivityAdjoint:
         print("unstable_range = ",self.unstable_range);
         print("neutral_range = ",self.neutral_range);
         print("stable_range = ",self.stable_range);
+        print("Modes for optimization = ",n_unstableneutral-n_unstable);
 
         return 0;
         
